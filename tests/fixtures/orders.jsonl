@@ -1,0 +1,3 @@
+{"id": "O001", "customer": "C001", "amount": 4500.00, "status": "completed"}
+{"id": "O002", "customer": "C001", "amount": 2200.00, "status": "pending"}
+{"id": "O003", "customer": "C002", "amount": 890.50, "status": "completed"}

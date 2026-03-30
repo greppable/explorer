@@ -1,0 +1,20 @@
+# Diagram with scenario support
+@diagram|id:scenario-test|type:flow|purpose:Test scenario application|direction:TD
+
+@node|id:API|label:API Gateway
+@node|id:Cache|label:Cache Layer
+@node|id:DB|label:Database
+@node|id:Analytics|label:Analytics Service
+
+@edge|from:API|to:Cache|label:queries
+@edge|from:Cache|to:DB|label:misses
+@edge|from:API|to:Analytics|label:logs
+
+@scenario|id:base
+@scenario|id:prod|inherits:base|label:Production
+@scenario|id:prod-eu|inherits:prod|label:Production EU
+
+@override|scenario:prod|target:Cache|field:label|value:Redis Cluster
+@override|scenario:prod-eu|target:DB|field:label|value:EU Database
+
+@exclude|scenario:prod|target:Analytics

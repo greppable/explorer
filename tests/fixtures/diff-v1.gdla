@@ -1,0 +1,15 @@
+@D api-v1|API version 1|1.0|/api/v1
+
+@S Pet|A pet in the store
+ id|integer|required|int64|Pet ID
+ name|string|required||Pet name
+
+@S Error|Standard error
+ code|integer|required|int32|Error code
+ message|string|required||Error message
+
+@EP GET /pets|List pets|200:Pet[]|api_key
+@EP POST /pets|Create pet|201:Pet|bearer
+@EP DELETE /pets/{id}|Delete pet|204:|bearer
+
+@AUTH api_key|API key auth|X-API-Key

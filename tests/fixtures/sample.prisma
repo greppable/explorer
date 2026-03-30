@@ -1,0 +1,64 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+  profile   Profile?
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  total     Decimal     @db.Decimal(10,2)
+  notes     String?
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id          Int    @id @default(autoincrement())
+  orderId     Int
+  productName String
+  quantity    Int    @default(1)
+  price       Decimal @db.Decimal(10,2)
+  order       Order  @relation(fields: [orderId], references: [id])
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  bio    String?
+  userId Int    @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model CompositeKey {
+  fieldA Int
+  fieldB String
+  value  String
+
+  @@id([fieldA, fieldB])
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}

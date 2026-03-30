@@ -1,0 +1,11 @@
+# Flow profile — all types valid for profile:flow
+@diagram|id:test-flow|type:flow|profile:flow|purpose:Test flow profile
+
+@group|id:entry|label:Entry Stage
+@node|id:Input|label:Input|group:entry
+@node|id:Process|label:Process|group:entry
+@edge|from:Input|to:Process|label:data|type:data
+@gotcha|issue:Test issue|detail:Test detail|severity:info
+@component|name:Entry|file:src/entry.ts|does:Entry point
+@use-when|condition:testing
+@decision|id:ADR-001|title:Test decision|status:accepted

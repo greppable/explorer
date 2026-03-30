@@ -1,0 +1,6 @@
+# Prefixed patterns
+gdlc:__mocks__/
+gdlc:storybook/
+gdlu:api-docs/generated/
+# Unprefixed (applies to all)
+.cache/

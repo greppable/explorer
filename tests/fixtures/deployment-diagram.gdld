@@ -1,0 +1,18 @@
+# Deployment Diagram Test
+@diagram|id:deploy-test|type:deployment|purpose:Test deployment diagram rendering|direction:TB
+
+@deploy-env|id:prod|label:Production Environment
+@deploy-env|id:staging|label:Staging Environment
+
+@deploy-node|id:web-cluster|label:Web Cluster|env:prod
+@deploy-node|id:db-cluster|label:Database Cluster|env:prod
+@deploy-node|id:staging-server|label:Staging Server|env:staging
+
+@deploy-instance|id:api-1|component:API Service|node:web-cluster|instances:3
+@deploy-instance|id:api-staging|component:API Service|node:staging-server|instances:1
+
+@infra-node|id:lb|label:Load Balancer|node:web-cluster
+@infra-node|id:redis|label:Redis Cache|node:db-cluster
+
+@edge|from:lb|to:api-1|label:routes traffic
+@edge|from:api-1|to:redis|label:caches

@@ -1,0 +1,32 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D finance|General ledger and accounts
+
+@T GL_ACCOUNT|Account master data
+GL_ACCOUNT_ID|INTEGER|N|PK|Primary key
+GL_TEXT_1|VARCHAR(50)|Y||Account name
+GL_STATUS|VARCHAR(20)|N||Account status
+GL_PARENT_ID|INTEGER|Y|FK|Parent account
+@E GL_ACCOUNT.GL_STATUS|ACTIVE,INACTIVE,SUSPENDED|Account lifecycle status
+
+@T GL_JOURNAL|Journal entries
+GL_JOURNAL_ID|INTEGER|N|PK|Primary key
+GL_JOURNAL_DATE|DATE|Y||Entry date
+GL_ACCOUNT_REF|INTEGER|N|FK|Account reference
+ENTRY_TYPE|VARCHAR(20)|Y||How the entry was created
+@E GL_JOURNAL.ENTRY_TYPE|MANUAL,AUTO,REVERSAL
+
+@T AR_RECEIPT|Accounts receivable receipts
+AR_RECEIPT_ID|INTEGER|N|PK|Primary key
+AR_AMOUNT|DECIMAL(18,2)|N||Receipt amount
+AR_ACCOUNT_ID|INTEGER|N|FK|Account reference
+AR_JOURNAL_ID|INTEGER|Y|FK|Linked journal
+
+@R GL_ACCOUNT.GL_PARENT_ID -> GL_ACCOUNT.GL_ACCOUNT_ID|fk|Account hierarchy
+@R GL_JOURNAL.GL_ACCOUNT_REF -> GL_ACCOUNT.GL_ACCOUNT_ID|fk|Journal to account
+@R AR_RECEIPT.AR_ACCOUNT_ID -> GL_ACCOUNT.GL_ACCOUNT_ID|fk|Receipt to account
+@R AR_RECEIPT.AR_JOURNAL_ID -> GL_JOURNAL.GL_JOURNAL_ID|fk|Receipt to journal
+
+@R snowflake:GL_ACCOUNT -> databricks:gl_account_v2|equivalent|Same entity across systems
+
+@PATH GL_JOURNAL -> GL_ACCOUNT -> AR_RECEIPT|Journal to receipt via account
+@PATH AR_RECEIPT -> GL_JOURNAL -> GL_ACCOUNT|Receipt to account via journal

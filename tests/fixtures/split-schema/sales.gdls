@@ -1,0 +1,8 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D sales|Sales transaction tables
+@T STORE_SALES|Store sales facts
+SS_SOLD_DATE_SK|INTEGER|Y|FK|Sale date
+SS_ITEM_SK|INTEGER|Y|FK|Item sold
+SS_QUANTITY|INTEGER|Y||Quantity sold
+@R STORE_SALES.SS_SOLD_DATE_SK -> DATE_DIM.D_DATE_SK|fk|Sale date lookup
+@R STORE_SALES.SS_ITEM_SK -> ITEM.I_ITEM_SK|fk|Item lookup

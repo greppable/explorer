@@ -1,0 +1,9 @@
+# @FORMAT NAME|KIND|VISIBILITY|RETURN|PARAMS|DESCRIPTION
+# lint-errors.gdlc — deliberate errors
+@D src/lib|Library code
+@T AuthService|Authentication service
+login|method|public|boolean|username:string, password:string|Authenticates user
+logout|method|public|void||Logs out user
+@R AuthService -> NonexistentModule|uses|Bad dependency
+@T UserService|User management
+getUser|method|public|User|id:string|Gets user by ID

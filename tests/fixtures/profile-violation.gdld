@@ -1,0 +1,7 @@
+# Flow profile with unexpected sequence types
+@diagram|id:test-violation|type:flow|profile:flow|purpose:Test profile violation
+
+@node|id:A|label:Node A
+@participant|id:user|label:User|role:user
+@msg|from:user|to:A|label:Hello|type:request
+@deploy-env|id:prod|label:Production|provider:aws

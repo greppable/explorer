@@ -1,0 +1,4 @@
+@diagram|id:prefix-special|type:flow|purpose:Test special chars in prefix|direction:LR
+@include|file:include-auth.gdld|prefix:mod/v2_
+@node|id:API|label:API Gateway
+@edge|from:API|to:mod/v2_AuthService|label:authenticates

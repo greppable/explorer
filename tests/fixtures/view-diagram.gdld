@@ -1,0 +1,21 @@
+# Diagram with view support
+@diagram|id:view-test|type:flow|purpose:Test view filtering|direction:LR
+
+@node|id:API|label:API Gateway|tags:public,core|group:backend
+@node|id:Auth|label:Auth Service|tags:security,core|group:backend
+@node|id:UserDB|label:User Database|tags:security,pii|group:data
+@node|id:Cache|label:Cache|tags:core
+@node|id:Analytics|label:Analytics|tags:public
+
+@edge|from:API|to:Auth|label:authenticates
+@edge|from:Auth|to:UserDB|label:validates
+@edge|from:API|to:Cache|label:queries
+@edge|from:API|to:Analytics|label:logs
+
+@group|id:backend|label:Backend Services
+@group|id:data|label:Data Layer
+
+@view|id:security|filter:tags:security|label:Security View
+@view|id:core|filter:tags:core|label:Core Components
+@view|id:public-only|excludes:backend|label:Public Only
+@view|id:backend-only|includes:backend|label:Backend Only

@@ -1,0 +1,9 @@
+# XFAIL: Circular group references - expected to fail validation
+@diagram|id:circular|type:flow|purpose:Test circular group detection
+
+@group|id:groupA|label:Group A|parent:groupB
+@group|id:groupB|label:Group B|parent:groupA
+
+@node|id:X|label:Node X|group:groupA
+@node|id:Y|label:Node Y|group:groupB
+@edge|from:X|to:Y

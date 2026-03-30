@@ -1,0 +1,53 @@
+# Sample GDLU fixture — unstructured content index for test coverage
+# Exercises: @source, @section, @extract, escaping, refs, supersession, hierarchy
+
+@source|id:U-001|path:contracts/acme-msa.pdf|format:pdf|type:contract|pages:42|author:legal-team|created:2024-03-15|summary:Master service agreement between Acme Corp and Beta LLC|entities:Acme Corp,Beta LLC|topics:MSA,indemnification|tags:legal,active,enterprise|agent:doc-agent|ts:2026-02-01T10:00:00|signal:high|refs:gdls:GL_ACCOUNT
+
+// Cloud-hosted source with URL path
+@source|id:U-002|path:https://figma.com/file/abc123/Dashboard|format:figma|type:design-file|author:design-team|created:2026-01-10|summary:Platform dashboard designs|entities:platform-team|topics:UI,dashboard|tags:design,active|agent:doc-agent|ts:2026-01-15T11:00:00|signal:medium
+
+@source|id:U-003|path:meetings/2026-01-15-standup.txt|format:txt|type:meeting-transcript|duration:25m|created:2026-01-15|summary:Weekly standup covering sprint progress|entities:Joey,Sarah,Mike|topics:sprint-review,auth-migration|tags:standup,engineering|agent:doc-agent|ts:2026-01-16T09:00:00|signal:high
+
+# Amendment that references original contract
+@source|id:U-004|path:contracts/acme-amendment-1.pdf|format:pdf|type:contract-amendment|pages:3|created:2025-09-01|summary:Amendment 1 increases liability cap to $750K|entities:Acme Corp|tags:legal,active|refs:gdlu:U-001|agent:doc-agent|ts:2026-02-01T10:30:00|signal:high
+
+# Low-signal source (no sections or extracts)
+@source|id:U-005|path:meetings/2026-01-20-standup.txt|format:txt|type:meeting-transcript|duration:8m|created:2026-01-20|summary:Daily standup, no decisions or blockers|tags:standup|agent:doc-agent|ts:2026-01-20T10:00:00|signal:low
+
+# Stale source
+@source|id:U-006|path:research/old-analysis.pdf|format:pdf|type:analysis|summary:Outdated market analysis|ts:2025-06-01T10:00:00|status:stale|signal:low
+
+# Sections for U-001 (contract)
+@section|source:U-001|id:S-001|loc:p:1-3|title:Definitions|summary:Defines key terms including Service Provider and Client
+@section|source:U-001|id:S-002|loc:p:4-12|title:Scope of Services|summary:Professional services model and SOW process
+@section|source:U-001|id:S-003|loc:p:13-18|title:Payment Terms|summary:Net-30 payment with milestone billing at 1.5% late penalty
+
+# Sections for U-003 (meeting) — with time-based locators and escaped colons
+@section|source:U-003|id:S-010|loc:t:00\:00-08\:30|title:Sprint Review|summary:3 stories completed, velocity at 34 points|topics:sprint
+@section|source:U-003|id:S-011|loc:t:08\:30-15\:20|title:Auth Migration Blocker|summary:OAuth token refresh failing in staging|entities:Sarah|topics:auth-migration|tags:blocker
+
+# Hierarchical sections (parent/child)
+@section|source:U-001|id:S-020|loc:p:30-42|title:Legal Provisions|summary:Liability, indemnification, IP assignment
+@section|source:U-001|id:S-021|loc:p:30-35|title:Liability Cap|summary:Total aggregate liability clause|parent:S-020
+@section|source:U-001|id:S-022|loc:p:36-42|title:IP Assignment|summary:Work-for-hire assignment upon payment|parent:S-020
+
+# Extracts for U-001 (contract)
+@extract|source:U-001|id:X-001|kind:metric|key:liability-cap|value:$500,000|section:S-021|confidence:high|context:Total aggregate liability capped per SOW
+@extract|source:U-001|id:X-002|kind:date|key:term-end|value:2027-03-15|section:S-002|confidence:high
+@extract|source:U-001|id:X-003|kind:clause|key:IP-assignment|value:work-for-hire, assigns to Client upon payment|section:S-022|confidence:high
+@extract|source:U-001|id:X-004|kind:clause|key:termination-for-convenience|value:either party, 90 days written notice|confidence:high
+
+# Extracts for U-003 (meeting)
+@extract|source:U-003|id:X-010|kind:decision|key:defer-analytics|value:Analytics dashboard deferred to next sprint|section:S-010|confidence:high
+@extract|source:U-003|id:X-011|kind:action|key:investigate-oauth|value:Sarah to debug token refresh by EOD Wednesday|section:S-011
+@extract|source:U-003|id:X-012|kind:risk|key:auth-blocker|value:OAuth token refresh failing blocks 3 downstream stories|section:S-011|confidence:high
+
+# Superseded extract (amendment changed the cap)
+@extract|source:U-004|id:X-020|kind:metric|key:liability-cap|value:$750,000|confidence:high|supersedes:X-001|context:Amendment 1 increases cap from $500K
+@extract|source:U-001|id:X-001|kind:metric|key:liability-cap|value:$500,000|section:S-021|confidence:high|status:superseded
+
+# Extract with escaped pipe in value
+@extract|source:U-001|id:X-030|kind:term|key:confidential-info|value:Any non-public data shared between Provider \| Client|confidence:high
+
+# Extract with low confidence
+@extract|source:U-003|id:X-031|kind:entity|key:auth-system|value:Auth0|confidence:low|context:Mentioned briefly, unclear if current provider

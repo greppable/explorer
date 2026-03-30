@@ -1,0 +1,6 @@
+# Glob patterns
+**/*.stories.tsx
+**/*.stories.ts
+gdlc:**/*.test.ts
+# Root-relative
+/vendor-custom/

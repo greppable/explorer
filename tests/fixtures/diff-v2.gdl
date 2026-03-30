@@ -1,0 +1,3 @@
+@customer|id:C001|name:Acme Corp|tier:enterprise
+@customer|id:C002|name:Beta LLC|tier:growth
+@customer|id:C004|name:Delta Inc|tier:growth

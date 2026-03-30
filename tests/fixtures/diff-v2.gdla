@@ -1,0 +1,21 @@
+@D api-v2|API version 2|2.0|/api/v2
+
+@S Pet|A pet in the store
+ id|integer|required|int64|Pet ID
+ name|string|required||Pet name
+ status|string|||Pet status
+
+@S Tag|A tag for categorization
+ id|integer|required|int64|Tag ID
+ name|string|required||Tag name
+
+@S Error|Standard error
+ code|integer|required|int32|Error code
+ message|string|required||Error message
+
+@EP GET /pets|List pets|200:Pet[],400:Error|api_key
+@EP POST /pets|Create pet|201:Pet|bearer
+@EP GET /pets/{id}|Get pet|200:Pet,404:Error|api_key
+
+@AUTH api_key|API key auth|X-API-Key
+@AUTH bearer|Bearer token auth|Authorization

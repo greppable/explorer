@@ -1,0 +1,13 @@
+# Escaped Characters Test - GDLD escape sequences
+@diagram|id:escape-test|type:flow|purpose:Test GDLD escape sequences|direction:TD
+
+@node|id:A|label:Has pipe \| in label
+@node|id:B|label:Has colon \: in label
+@node|id:C|label:Has backslash \\ in label
+@node|id:D|label:Multiple \| pipes \| here
+@node|id:E|label:Mixed \| and \: escapes
+
+@edge|from:A|to:B|label:Edge with \| pipe
+@edge|from:B|to:C
+@edge|from:C|to:D
+@edge|from:D|to:E|label:Label\:with\:colons

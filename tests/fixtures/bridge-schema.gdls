@@ -1,0 +1,21 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D finance|General ledger accounts
+
+@T GL_ACCOUNT|Account master data
+GL_ACCOUNT_ID|INTEGER|N|PK|Primary key
+GL_TEXT_1|VARCHAR(50)|Y||Account name
+
+@T GL_JOURNAL|Journal entries
+GL_JOURNAL_ID|INTEGER|N|PK|Primary key
+GL_ACCOUNT_REF|INTEGER|N|FK|Account reference
+
+@D receivables|Accounts receivable
+
+@T AR_RECEIPT|Accounts receivable receipts
+AR_RECEIPT_ID|INTEGER|N|PK|Primary key
+AR_ACCOUNT_ID|INTEGER|N|FK|Account reference
+
+@R GL_JOURNAL.GL_ACCOUNT_REF -> GL_ACCOUNT.GL_ACCOUNT_ID|fk|Journal to account
+@R AR_RECEIPT.AR_ACCOUNT_ID -> GL_ACCOUNT.GL_ACCOUNT_ID|fk|Receipt to account
+@R AR_RECEIPT.AR_ACCOUNT_ID -> GL_JOURNAL.GL_JOURNAL_ID|feeds|Receipt feeds journal
+@R snowflake:GL_ACCOUNT -> databricks:gl_account_v2|equivalent|Cross-system mapping

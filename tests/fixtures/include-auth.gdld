@@ -1,0 +1,7 @@
+# Authentication module - to be included
+@diagram|id:auth-module|type:flow|purpose:Authentication components
+
+@node|id:AuthService|label:Auth Service|shape:box
+@node|id:TokenStore|label:Token Store|shape:database
+
+@edge|from:AuthService|to:TokenStore|label:stores tokens

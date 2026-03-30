@@ -1,0 +1,13 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D finance|Finance domain
+@T GL_ACCOUNT|General Ledger
+GL_ACCOUNT_ID|INT|N|PK|Account identifier
+GL_TEXT_1|VARCHAR(100)|Y||Text field expanded
+BALANCE|DECIMAL(18,2)|Y||Current balance
+REGION_CODE|VARCHAR(100)|Y||Region code
+@T GL_JOURNAL|Journal entries
+JOURNAL_ID|INT|N|PK|Journal identifier
+AMOUNT|DECIMAL(18,2)|N||Entry amount
+@T AUDIT_LOG|Audit trail
+AUDIT_ID|INT|N|PK|Audit identifier
+ACTION|VARCHAR(50)|N||Action type

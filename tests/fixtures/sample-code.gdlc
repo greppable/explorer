@@ -1,0 +1,42 @@
+# @FORMAT NAME|KIND|VISIBILITY|RETURN|PARAMS|DESCRIPTION
+# Sample GDLC fixture — code structure for a parser module
+
+@D src/lib/parsers|Parser modules for GDL format family
+
+@T GdlsParser|Parses GDLS schema files into structured types
+parseGdlsFile|function|public|GdlsFile|content: string|Main entry point for GDLS parsing
+parseDomain|function|private|GdlsDomain|line: string|Extracts @D domain header
+parseColumn|function|private|GdlsColumn|line: string|Parses positional column fields
+normalizeType|function|private|string|raw: string|Normalizes SQL type names
+TABLE_PATTERN|const|private|RegExp||Regex matching @T lines
+GdlsFile|interface|public|||Parsed schema result type
+@E GdlsColumn.nullable|Y,N|Whether column allows nulls
+@R GdlsParser -> GdlsFile|returns
+@R GdlsParser -> fs|depends|Reads .gdls files from filesystem
+@R GdlsParser.parseColumn -> GdlsParser.normalizeType|calls
+
+@T GdlParser|Parses GDL data record files
+parseGdl|function|public|GdlRecord[]|content: string|Parses pipe-delimited data records
+getField|function|public|string \| null|record: string, key: string|Extracts key:value field from record
+splitFields|function|public|string[]|record: string|Splits record respecting escape sequences
+@R GdlParser -> GdlsParser|imports|Reuses shared type definitions
+@R GdlParser.getField -> GdlParser.splitFields|calls
+
+@D src/components|UI components for GDL Explorer
+
+@T GdlsViewer|Main GDLS schema viewer component
+GdlsViewerProps|interface|public|||Component props type
+selectedTable|property|private|string \| null||Currently selected table name
+viewMode|property|private|string||Tree or ER diagram mode
+@E GdlsViewer.viewMode|tree,er|Display mode toggle
+@R GdlsViewer -> GdlsParser|imports|Consumes parsed schema data
+@R GdlsViewer -> SchemaTree|calls|Renders tree navigation
+@R GdlsViewer -> TableDetail|calls|Renders table detail panel
+
+@T TableDetail|Shows columns, FKs, and enum values for a table
+TableDetailProps|interface|public|||Component props type
+onTableNavigate|method|public|void|tableName: string|Navigates to another table
+@R TableDetail -> GdlsViewer|imports
+
+@PATH Request -> ApiRoute -> GdlsParser -> FileSystem|callchain|Schema load flow
+@PATH UserClick -> GdlsViewer -> SchemaTree -> TableDetail|dataflow|Table navigation

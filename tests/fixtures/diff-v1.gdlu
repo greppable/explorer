@@ -1,0 +1,3 @@
+@source|id:U-001|path:report.pdf|format:pdf|type:report|summary:Q4 financials|ts:2026-01-01T10:00:00Z
+@source|id:U-002|path:notes.txt|format:txt|type:meeting-transcript|summary:Board meeting|ts:2026-01-01T11:00:00Z
+@extract|id:X-001|source:U-001|kind:metric|key:revenue|value:1.2M

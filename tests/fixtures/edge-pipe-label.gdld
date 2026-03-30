@@ -1,0 +1,4 @@
+@diagram|id:pipe-label|type:flow|purpose:Test pipe in edge label|direction:LR
+@node|id:A|label:Source
+@node|id:B|label:Target
+@edge|from:A|to:B|label:Input\|Output

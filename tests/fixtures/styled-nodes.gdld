@@ -1,0 +1,20 @@
+# Styled Nodes Test
+@diagram|id:styled-test|type:flow|purpose:Test node shapes and status|direction:TD
+
+@node|id:Start|label:Start Here|shape:stadium
+@node|id:Decision|label:Check Status?|shape:diamond
+@node|id:OldWay|label:Legacy Process|status:deprecated
+@node|id:NewWay|label:New Process|status:planned
+@node|id:Data|label:Database|shape:database
+@node|id:SubProc|label:Subprocess|shape:subroutine
+@node|id:Hex|label:Hexagon|shape:hexagon
+@node|id:Circle|label:Round Node|shape:circle
+
+@edge|from:Start|to:Decision
+@edge|from:Hex|to:Circle|bidirectional:true
+@edge|from:Data|to:SubProc|bidirectional:true|style:dashed
+@edge|from:Decision|to:OldWay|label:old|status:deprecated
+@edge|from:Decision|to:NewWay|label:new|style:dashed
+@edge|from:OldWay|to:Data
+@edge|from:NewWay|to:SubProc
+@edge|from:SubProc|to:Hex

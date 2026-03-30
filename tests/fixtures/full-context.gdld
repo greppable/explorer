@@ -1,0 +1,27 @@
+# Full Context Test
+@diagram|id:context-test|type:flow|purpose:Test all context sections|direction:TD
+
+@use-when|condition:testing context sections
+@use-when|condition:need comprehensive output|threshold:all sections
+@use-not|condition:minimal diagrams|reason:too much overhead
+
+@node|id:A|label:Start
+@node|id:B|label:End
+@edge|from:A|to:B
+
+@component|name:Main Script|file:scripts/main.py|does:Entry point
+@component|name:Helper|file:scripts/helper.py|does:Utility functions
+
+@config|param:timeout|value:30s|note:Configurable
+@config|param:retries|value:3
+
+@gotcha|issue:Memory limits|detail:Large files may fail|fix:Use streaming
+@recovery|issue:Crash on startup|means:Config missing|fix:Check config first
+
+@entry|use-case:Normal run|command:python main.py
+@entry|use-case:Debug mode|command:python main.py --debug
+
+@decision|id:ADR-001|title:Use Python|status:accepted|reason:Team expertise
+
+@note|context:caveat|text:This is a test diagram
+@pattern|name:Pipeline Pattern|file:patterns/pipeline.gdld

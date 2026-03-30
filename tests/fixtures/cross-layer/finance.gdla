@@ -1,0 +1,24 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-02-18 source:manual
+# Small API fixture for cross-layer walker tests
+
+@D finance-api|Financial data API|1.0|/api/v1
+
+@S Account|Financial account
+ id|integer|required|int64|Account identifier
+ name|string|required||Account name
+ balance|number||decimal|Current balance
+
+@S Transaction|Financial transaction
+ id|integer|required|int64|Transaction identifier
+ accountId|integer|required|int64|Parent account
+ amount|number|required|decimal|Transaction amount
+
+@S Error|Standard error response
+ code|integer|required|int32|HTTP status code
+ message|string|required||Error description
+
+@EP GET /accounts|List accounts|200:Account[]|bearer
+@EP GET /accounts/{id}|Get account|200:Account,404:Error|bearer
+@P id|path|string|required|Account ID
+
+@R Account -> Transaction|references|via transactions

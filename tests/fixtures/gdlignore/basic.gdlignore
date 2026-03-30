@@ -1,0 +1,4 @@
+# Basic .gdlignore — no prefixes, no globs
+components/ui/
+generated/
+.storybook/

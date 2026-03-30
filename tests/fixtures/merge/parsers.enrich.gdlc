@@ -1,0 +1,11 @@
+# @VERSION spec:gdlc v:0.1.0 generated:2026-02-15 source:agent
+# Enrichments for parsers.gdlc
+
+@D src/lib/parsers|Parser modules for GDL format family
+@T GdlsParser|Parses GDLS schema files into structured types
+parseGdlsFile|||||Main entry point for GDLS parsing
+parseDomain|||||Extracts @D domain header
+
+# Agent-only records
+@R GdlsParser.parseColumn -> GdlsParser.normalizeType|calls|Semantic call
+@PATH FileRead -> GdlsParser.parseGdlsFile -> parseDomain|callchain|Schema parse flow

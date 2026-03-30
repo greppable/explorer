@@ -1,0 +1,21 @@
+# Nested Groups Test
+@diagram|id:nested-test|type:flow|purpose:Test nested subgraphs|direction:TD
+
+@group|id:outer|label:Outer Container
+@group|id:inner|label:Inner Section|parent:outer
+@group|id:deepest|label:Deepest Level|parent:inner
+
+@node|id:A|label:Top Level
+@node|id:B|label:In Outer|group:outer
+@node|id:C|label:In Inner|group:inner
+@node|id:D|label:In Deepest|group:deepest
+
+@edge|from:A|to:B
+@edge|from:B|to:C
+@edge|from:C|to:D
+
+@view|id:no-outer|excludes:outer|label:Exclude Outer
+@view|id:only-outer|includes:outer|label:Only Outer
+@view|id:outer-no-deepest|includes:outer|excludes:deepest|label:Outer Without Deepest
+@view|id:only-inner|includes:inner|label:Only Inner
+@view|id:only-deepest|includes:deepest|label:Only Deepest

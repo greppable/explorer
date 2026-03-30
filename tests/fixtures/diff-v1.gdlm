@@ -1,0 +1,2 @@
+@memory|id:M-test-001|agent:test|subject:GL_ACCOUNT|detail:13 columns observed|ts:2026-01-01T10:00:00Z
+@memory|id:M-test-002|agent:test|subject:GL_JOURNAL|detail:5 columns observed|ts:2026-01-01T11:00:00Z

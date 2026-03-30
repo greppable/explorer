@@ -1,0 +1,5 @@
+# lint-errors.gdl — deliberate errors for lint testing
+@customer|id:C001|name:Acme Corp|tier:enterprise
+@customer|id:C001|name:Duplicate ID|tier:growth
+@customer|missing-colon-in-field|name:Bad Record
+@customer|id:C003|name:Unescaped|Pipe|tier:basic

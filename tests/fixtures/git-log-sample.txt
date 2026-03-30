@@ -1,0 +1,84 @@
+---GIT2GDLM-7f3a9b2c---
+abc1234	2026-01-15T10:30:00+00:00	feat: add user authentication with JWT tokens
+Added JWT-based authentication middleware with refresh token rotation.
+Supports RS256 signing with configurable key pairs.
+---FILES-7f3a9b2c---
+src/auth/middleware.ts
+src/auth/jwt.ts
+src/config/auth.ts
+tests/auth/middleware.test.ts
+---GIT2GDLM-7f3a9b2c---
+def5678	2026-01-16T14:00:00+00:00	fix: resolve race condition in connection pool
+Pool exhaustion under concurrent load caused deadlocks.
+Root cause: connections weren't returned on query timeout.
+Added timeout-based connection reclaim.
+---FILES-7f3a9b2c---
+src/db/pool.ts
+src/db/connection.ts
+---GIT2GDLM-7f3a9b2c---
+ghi9012	2026-01-17T09:15:00+00:00	refactor: extract payment processing into separate module
+Moved payment logic out of the monolithic order service.
+New module handles Stripe integration, retry logic, and webhook verification.
+---FILES-7f3a9b2c---
+src/payments/processor.ts
+src/payments/stripe.ts
+src/payments/webhooks.ts
+src/orders/service.ts
+---GIT2GDLM-7f3a9b2c---
+jkl3456	2026-01-18T11:45:00+00:00	docs: update API documentation for v2 endpoints
+---FILES-7f3a9b2c---
+docs/api.md
+---GIT2GDLM-7f3a9b2c---
+mno7890	2026-01-19T16:20:00+00:00	chore: bump dependencies to latest versions
+---FILES-7f3a9b2c---
+package.json
+package-lock.json
+---GIT2GDLM-7f3a9b2c---
+pqr1234	2026-01-20T08:00:00+00:00	feat: implement rate limiting middleware
+Token bucket algorithm with configurable burst and sustained rates.
+Redis-backed for distributed deployments.
+---FILES-7f3a9b2c---
+src/middleware/rate-limit.ts
+src/config/rate-limit.ts
+---GIT2GDLM-7f3a9b2c---
+stu5678	2026-01-21T13:30:00+00:00	fix(auth): handle expired refresh tokens gracefully
+Users were getting 500 errors when refresh tokens expired.
+Now returns 401 with clear error message and forces re-login.
+---FILES-7f3a9b2c---
+src/auth/refresh.ts
+src/auth/errors.ts
+---GIT2GDLM-7f3a9b2c---
+vwx9012	2026-01-22T10:00:00+00:00	perf: optimize database query for user search
+Replaced sequential queries with a single JOIN.
+Response time dropped from 340ms to 45ms for the user search endpoint.
+---FILES-7f3a9b2c---
+src/db/queries/user-search.ts
+---GIT2GDLM-7f3a9b2c---
+yza3456	2026-01-23T15:45:00+00:00	feat!: migrate from REST to GraphQL for user API
+Breaking change: REST /api/users/* endpoints removed.
+New GraphQL schema with equivalent queries and mutations.
+Migration guide added to docs.
+---FILES-7f3a9b2c---
+src/graphql/schema.ts
+src/graphql/resolvers/user.ts
+src/api/users.ts
+docs/migration-guide.md
+---GIT2GDLM-7f3a9b2c---
+bcd7890	2026-01-24T12:00:00+00:00	test: add integration tests for payment flow
+---FILES-7f3a9b2c---
+tests/integration/payment.test.ts
+---GIT2GDLM-7f3a9b2c---
+efg1234	2026-01-25T09:00:00+00:00	feat: add input|output validation for API endpoints
+Zod schemas for request/response validation.
+---FILES-7f3a9b2c---
+src/validation/schemas.ts
+src/middleware/validate.ts
+---GIT2GDLM-7f3a9b2c---
+bnd0001	2026-01-26T07:00:00+00:00	fix: remove stale cache entries
+---FILES-7f3a9b2c---
+src/cache/store.ts
+src/cache/invalidate.ts
+---GIT2GDLM-7f3a9b2c---
+trv0001	2026-01-26T08:00:00+00:00	fix: typo in error message
+---FILES-7f3a9b2c---
+src/utils/messages.ts

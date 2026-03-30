@@ -1,0 +1,5 @@
+[
+  {"id": "C001", "name": "Acme Inc", "tier": "enterprise"},
+  {"id": "C002", "name": "Beta Corp", "tier": "startup"},
+  {"id": "C003", "name": "Gamma Ltd", "tier": "growth"}
+]

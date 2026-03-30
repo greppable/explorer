@@ -1,0 +1,8 @@
+# XFAIL: Invalid Diagram Test - expected to fail validation
+# Tests that validation correctly detects: missing parent group, missing edge target
+@diagram|id:invalid|type:flow|purpose:Test validation errors
+
+@group|id:child|label:Child|parent:nonexistent
+
+@node|id:A|label:A
+@edge|from:A|to:B

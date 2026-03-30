@@ -1,0 +1,5 @@
+@diagram|id:finance-arch|type:flow|purpose:Finance architecture
+@node|id:GL_ACCOUNT|label:GL Account Table|shape:box
+@node|id:GL_JOURNAL|label:GL Journal|shape:box
+@edge|from:GL_JOURNAL|to:GL_ACCOUNT|label:references|type:data
+@component|name:GL_ACCOUNT|file:finance/schema.gdls|does:Account master data

@@ -1,0 +1,17 @@
+@diagram|id:scenario-test|type:flow|purpose:Test scenarios|direction:TD
+
+@scenario|id:production
+@scenario|id:staging|inherits:production
+
+@node|id:A|label:Service A|tags:core
+@node|id:B|label:Service B|tags:core,backend
+@node|id:debug|label:Debug Service|tags:debug
+
+@edge|from:A|to:B
+@edge|from:A|to:debug
+
+@override|scenario:production|target:A|field:label|value:Production Service A
+@exclude|scenario:production|target:debug
+
+@view|id:core-only|filter:tags:core
+@view|id:backend|filter:tags:backend

@@ -1,0 +1,4 @@
+# Test anchors for GDLM parser
+@anchor|concept:data-pipeline|scope:etl,sync,transform,load,extract
+@anchor|concept:auth-security|scope:authentication,authorization,oauth,jwt,token
+@anchor|concept:customer-data|scope:customer,account,contact,client

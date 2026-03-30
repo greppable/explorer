@@ -1,0 +1,4 @@
+@diagram|id:lint-test|type:flow|purpose:Test diagram
+@node|id:A|label:Node A
+@node|id:A|label:Duplicate A
+@edge|from:A|to:MISSING|label:Bad edge

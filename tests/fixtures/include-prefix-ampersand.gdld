@@ -1,0 +1,4 @@
+@diagram|id:prefix-amp|type:flow|purpose:Test ampersand in prefix|direction:LR
+@include|file:include-auth.gdld|prefix:R&D_
+@node|id:API|label:API Gateway
+@edge|from:API|to:R&D_AuthService|label:authenticates

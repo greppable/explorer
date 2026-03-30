@@ -1,0 +1,13 @@
+# Special Characters Test
+@diagram|id:special-test|type:flow|purpose:Test special character handling|direction:LR
+
+@node|id:A|label:Normal Label
+@node|id:B|label:Has "quotes" inside
+@node|id:C|label:Has & ampersand
+@node|id:D|label:Has #hash tag
+@node|id:E|label:Has `backticks`
+
+@edge|from:A|to:B
+@edge|from:B|to:C
+@edge|from:C|to:D
+@edge|from:D|to:E

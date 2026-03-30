@@ -1,0 +1,10 @@
+# Main diagram with includes
+@diagram|id:main-app|type:flow|purpose:Main application with auth|direction:LR
+
+@include|file:include-auth.gdld|prefix:auth_
+
+@node|id:API|label:API Gateway
+@node|id:UserDB|label:User Database|shape:database
+
+@edge|from:API|to:auth_AuthService|label:authenticates
+@edge|from:auth_AuthService|to:UserDB|label:validates

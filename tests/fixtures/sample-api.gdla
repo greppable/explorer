@@ -1,0 +1,97 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-02-18 source:manual
+# Sample GDLA fixture exercising all record types
+
+@D petstore-api|Pet store management API|3.0.1|https://api.petstore.io/v1
+
+@AUTH api_key|API key authentication|X-API-Key
+@AUTH bearer|JWT bearer token|Authorization
+@AUTH oauth2|OAuth 2.0 implicit flow|Authorization
+
+@S Pet|A pet in the store
+ id|integer|required|int64|Unique pet identifier
+ name|string|required||Pet display name
+ status|string||enum|Pet status in the store
+ tags|Tag[]|||Optional classification tags
+ category|Category|||Pet category
+
+@S Tag|A tag for categorizing pets
+ id|integer|required|int64|Tag identifier
+ name|string|||Tag display name
+
+@S Category|A pet category
+ id|integer|required|int64|Category identifier
+ name|string|||Category display name
+
+@S Order|A store order
+ id|integer|required|int64|Order identifier
+ petId|integer|required|int64|Pet being ordered
+ quantity|integer|||Number of pets
+ shipDate|string||date-time|Expected ship date
+ status|string||enum|Order status
+ complete|boolean|||Whether order is complete
+
+@S User|A registered user
+ id|integer|required|int64|User identifier
+ username|string|required||Login username
+ email|string||email|User email address
+
+@S Error|Standard error response
+ code|integer|required|int32|HTTP status code
+ message|string|required||Error description
+
+@ENUM PetStatus|available,pending,sold
+@ENUM OrderStatus|placed,approved,delivered
+
+@EP GET /pets|List all pets|200:Pet[],400:Error|api_key
+@P limit|query|integer||Maximum number of items to return
+@P offset|query|integer||Number of items to skip
+@P status|query|string||Filter by status
+
+@EP POST /pets|Create a new pet|201:Pet,400:Error|bearer
+@P body|body|Pet|required|Pet to create
+
+@EP GET /pets/{petId}|Get pet by ID|200:Pet,404:Error|api_key
+@P petId|path|string|required|The pet identifier
+
+@EP PUT /pets/{petId}|Update a pet|200:Pet,400:Error,404:Error|bearer
+@P petId|path|string|required|The pet identifier
+@P body|body|Pet|required|Updated pet data
+
+@EP DELETE /pets/{petId}|Delete a pet|204:,404:Error|bearer
+@P petId|path|string|required|The pet identifier
+
+@EP POST /pets/{petId}/uploadImage|Upload pet image|200:ApiResponse|bearer
+@P petId|path|string|required|The pet identifier
+@P file|body|binary|required|Image file to upload
+
+@EP GET /store/inventory|Get inventory counts|200:object|api_key
+
+@EP POST /store/orders|Place an order|201:Order,400:Error|bearer
+@P body|body|Order|required|Order to place
+
+@EP GET /users/{username}|Get user by username|200:User,404:Error|
+@P username|path|string|required|Username to look up
+
+# Escaped pipe in description
+@EP GET /pets/search|Search pets with filters \| pagination|200:Pet[],400:Error|api_key
+@P q|query|string|required|Search query
+
+@EP PATCH /pets/{petId}|Partial update a pet|200:Pet,404:Error|bearer
+@P petId|path|string|required|The pet identifier
+
+@EP HEAD /pets|Check pets collection exists|200:|
+@EP OPTIONS /pets|CORS preflight for pets|204:|
+
+# GraphQL operations
+@EP QUERY pets|Fetch pet list via GraphQL|200:Pet[]|bearer
+@P limit|query|integer||Maximum items
+@EP MUTATION createPet|Create a pet via GraphQL|200:Pet|bearer
+@P input|body|Pet|required|Pet input data
+@EP SUBSCRIPTION petUpdates|Subscribe to pet changes|200:Pet|bearer
+
+@R Pet -> Tag|references|via tags
+@R Pet -> Category|references|via category
+@R Order -> Pet|references|via petId
+
+@PATH User -> Order -> Pet|via /users/{id}/orders/{orderId}/pet
+@PATH Store -> Inventory -> Pet|via /store/inventory -> /pets/{petId}

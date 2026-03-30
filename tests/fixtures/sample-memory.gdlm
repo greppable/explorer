@@ -1,0 +1,15 @@
+# Sample memory fixture for gdlm2gdld testing
+@anchor|concept:auth-security|scope:authentication,jwt,oauth,token,session
+@anchor|concept:data-pipeline|scope:etl,sync,transform,pipeline
+@anchor|concept:error-handling|scope:retry,fallback,circuit-breaker,timeout
+
+@memory|id:M-dev-001|agent:dev|type:decision|subject:JWT authentication|detail:Chose JWT over session tokens for stateless API|tags:auth,jwt,api|anchor:auth-security|confidence:high|ts:2026-02-01T10:00:00Z
+@memory|id:M-dev-002|agent:dev|type:observation|subject:OAuth integration|detail:OAuth2 flow needs PKCE for mobile clients|tags:auth,oauth,mobile|anchor:auth-security|confidence:medium|ts:2026-02-01T11:00:00Z
+@memory|id:M-dev-003|agent:dev|type:decision|subject:Token refresh|detail:15-minute expiry with sliding refresh window|tags:jwt,token,security|anchor:auth-security|relates:refines~M-dev-001|confidence:high|ts:2026-02-01T12:00:00Z
+@memory|id:M-dev-004|agent:dev|type:error|subject:Pipeline timeout|detail:ETL job times out on large datasets|tags:etl,timeout,performance|anchor:data-pipeline|relates:caused_by~M-dev-005|confidence:high|ts:2026-02-02T09:00:00Z
+@memory|id:M-dev-005|agent:dev|type:observation|subject:Batch size|detail:Batch size over 10k causes memory pressure|tags:etl,performance,memory|anchor:data-pipeline|confidence:medium|ts:2026-02-02T08:00:00Z
+@memory|id:M-dev-006|agent:dev|type:decision|subject:Circuit breaker|detail:Added circuit breaker for external API calls|tags:api,resilience,circuit-breaker|anchor:error-handling|relates:supports~M-dev-004|confidence:high|ts:2026-02-03T10:00:00Z
+@memory|id:M-dev-007|agent:dev|type:fact|subject:FastAPI middleware|detail:FastAPI middleware order matters for auth checks|tags:api,auth,fastapi|anchor:auth-security|confidence:high|ts:2026-02-03T14:00:00Z
+@memory|id:M-dev-008|agent:dev|type:observation|subject:Retry strategy|detail:Exponential backoff with jitter works best|tags:retry,resilience|anchor:error-handling|confidence:medium|ts:2026-02-04T09:00:00Z
+@memory|id:M-dev-009|agent:dev|type:preference|subject:Logging format|detail:Structured JSON logging preferred over text|tags:logging,observability|confidence:high|ts:2026-02-04T11:00:00Z
+@memory|id:M-dev-010|agent:dev|type:observation|subject:Token validation|detail:Token validation should happen in middleware not routes|tags:auth,jwt,middleware|anchor:auth-security|relates:supersedes~M-dev-001|confidence:high|ts:2026-02-05T10:00:00Z

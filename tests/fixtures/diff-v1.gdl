@@ -1,0 +1,3 @@
+@customer|id:C001|name:Acme Corp|tier:startup
+@customer|id:C002|name:Beta LLC|tier:growth
+@customer|id:C003|name:Gamma Inc|tier:enterprise

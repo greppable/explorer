@@ -1,0 +1,14 @@
+# Grouped Flowchart Test
+@diagram|id:grouped-test|type:flow|purpose:Test with subgraphs|direction:TD
+
+@group|id:input|label:Input Stage
+@group|id:process|label:Processing
+
+@node|id:A|label:Start|group:input
+@node|id:B|label:Validate|group:input
+@node|id:C|label:Transform|group:process
+@node|id:D|label:Output|group:process
+
+@edge|from:A|to:B
+@edge|from:B|to:C
+@edge|from:C|to:D

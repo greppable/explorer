@@ -1,0 +1,7 @@
+# Test @include with records filter - only import node records, not edges
+@diagram|id:include-filter|type:flow|purpose:Test include records filter|direction:LR
+
+@include|file:include-auth.gdld|prefix:auth_|records:node
+
+@node|id:API|label:API Gateway
+@edge|from:API|to:auth_AuthService|label:authenticates

@@ -1,0 +1,9 @@
+# XFAIL: Circular scenario inheritance - expected to fail validation
+@diagram|id:circular-sc|type:flow|purpose:Test circular scenario detection
+
+@scenario|id:alpha|inherits:beta
+@scenario|id:beta|inherits:alpha
+
+@node|id:A|label:Node A
+@node|id:B|label:Node B
+@edge|from:A|to:B

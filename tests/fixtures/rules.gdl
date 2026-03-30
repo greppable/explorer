@@ -1,0 +1,5 @@
+# rules.gdl — sample rules for testing
+@rule|scope:*.ts|severity:error|desc:No console.log in production code — use structured logger
+@rule|scope:*.tsx|severity:warn|desc:React components must use PascalCase naming
+@rule|scope:src/api/**|severity:error|desc:All API route handlers must wrap body in try-catch
+@rule|scope:*|severity:info|desc:Prefer named exports over default exports

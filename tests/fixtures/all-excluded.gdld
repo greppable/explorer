@@ -1,0 +1,7 @@
+@diagram|id:all-excluded|type:flow|purpose:Test empty diagram warning
+@scenario|id:nuke
+@node|id:A|label:Node A
+@node|id:B|label:Node B
+@edge|from:A|to:B
+@exclude|scenario:nuke|target:A
+@exclude|scenario:nuke|target:B

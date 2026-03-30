@@ -1,0 +1,24 @@
+# GDLA fixture with intentional lint errors
+
+@D broken-api|API with lint errors|1.0|/api
+
+# Orphan field before any @S (linter should warn)
+ orphanField|string|required||This field has no schema
+
+# Orphan @P before any @EP (linter should warn)
+@P orphaned|query|string||This param has no endpoint
+
+@S User|A user
+ id|integer|required|int64|User ID
+ name|string|required||User name
+
+@S Order|An order
+ id|integer|required|int64|Order ID
+
+@EP GET /users|List users|200:User[]|
+@EP INVALID /bad|Endpoint with invalid method|200:User[]|
+@EP POST /orders|Create order|201:Order|
+
+# Dangling @R referencing nonexistent schema
+@R User -> NonExistentSchema|references|via field
+@R Order -> AlsoMissing|references|via orderId

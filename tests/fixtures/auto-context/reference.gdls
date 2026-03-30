@@ -1,0 +1,8 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D reference|Reference data tables
+@T DATE_DIM|Date dimension
+D_DATE_SK|INTEGER|N|PK|Date surrogate key
+D_DATE|DATE|Y||Calendar date
+@T ITEM|Item master
+I_ITEM_SK|INTEGER|N|PK|Item surrogate key
+I_ITEM_ID|CHAR(16)|N||Item identifier

@@ -1,0 +1,14 @@
+# Core dependencies
+flask==2.3.3
+requests>=2.31.0
+sqlalchemy~=2.0.0
+pydantic[email]>=2.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Dev dependencies (often in requirements-dev.txt but can be here)
+-r requirements-dev.txt
+
+# Pinned indirect
+certifi==2023.7.22

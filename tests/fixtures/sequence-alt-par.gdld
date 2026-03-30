@@ -1,0 +1,21 @@
+# Sequence with alt/else and par/and blocks
+@diagram|id:alt-par-test|type:sequence|purpose:Test alt/else and par/and blocks
+
+@participant|id:Client|label:Browser
+@participant|id:Cache|label:Cache Service
+@participant|id:DB|label:Database
+
+@msg|from:Client|to:Cache|label:Get data
+@block|type:alt|label:Cache hit|id:cache-check
+@msg|from:Cache|to:Client|label:Return cached
+@else|block:cache-check|label:Cache miss
+@msg|from:Cache|to:DB|label:Query database
+@msg|from:DB|to:Cache|label:Return result|type:response
+@msg|from:Cache|to:Client|label:Return fresh|type:response
+@endblock
+
+@block|type:par|label:Parallel fetch|id:parallel-ops
+@msg|from:Client|to:Cache|label:Refresh cache|type:async
+@and|block:parallel-ops|label:Also
+@msg|from:Client|to:DB|label:Log access|type:async
+@endblock

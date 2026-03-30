@@ -1,0 +1,9 @@
+# @VERSION spec:gdlc v:0.1.0 generated:2026-02-15 source:tree-sitter source-hash:a1b2c3d
+# @FORMAT NAME|KIND|VISIBILITY|RETURN|PARAMS|DESCRIPTION
+@D src/lib/parsers|
+@T GdlsParser|
+parseGdlsFile|function|public|GdlsFile|content: string|
+parseDomain|function|private|GdlsDomain|line: string|
+normalizeType|function|private|string|raw: string|
+@R GdlsParser -> GdlsFile|returns
+@R GdlsParser -> fs|depends

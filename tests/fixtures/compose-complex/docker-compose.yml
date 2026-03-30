@@ -1,0 +1,52 @@
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - frontend
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DB_HOST=db
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - frontend
+      - backend
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+  worker:
+    build: ./worker
+    depends_on:
+      - redis
+
+volumes:
+  db-data:
+
+networks:
+  frontend:
+  backend:

@@ -1,0 +1,9 @@
+# Minimal Flowchart Test
+@diagram|id:minimal-test|type:flow|purpose:Minimal test diagram|direction:TD
+
+@node|id:A|label:Start
+@node|id:B|label:Process
+@node|id:C|label:End
+
+@edge|from:A|to:B
+@edge|from:B|to:C|label:complete

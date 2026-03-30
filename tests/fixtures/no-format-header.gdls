@@ -1,0 +1,3 @@
+@D test|Test domain
+@T TEST_TABLE|Test table
+COL1|INTEGER|N|PK|Primary key

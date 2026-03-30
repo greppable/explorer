@@ -1,0 +1,2 @@
+@account|id:GL_ACCOUNT|name:General Ledger Account|status:active
+@config|id:GL_ACCOUNT_CACHE|target:GL_ACCOUNT|ttl:3600

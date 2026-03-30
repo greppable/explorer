@@ -1,0 +1,7 @@
+# lint-errors-rules.gdl — deliberate rule errors
+@rule|scope:*.ts|severity:error|desc:Valid rule
+@rule|scope:*.ts|desc:Missing severity field
+@rule|severity:warn|desc:Missing scope field
+@rule|scope:*.ts|severity:error
+@rule|scope:*.ts|severity:critical|desc:Invalid severity value
+@rule|scope:*.ts|severity:|desc:Empty severity value

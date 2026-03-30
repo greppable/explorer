@@ -1,0 +1,92 @@
+"""
+Sample GraphQL schema for testing graphql2gdla.sh
+"""
+
+scalar DateTime
+
+enum PetStatus {
+  AVAILABLE
+  PENDING
+  SOLD
+}
+
+enum OrderStatus {
+  PLACED
+  APPROVED
+  DELIVERED
+}
+
+union SearchResult = Pet | User | Order
+
+type Pet {
+  id: ID!
+  name: String!
+  status: PetStatus
+  tags: [Tag!]
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String
+}
+
+type Tag {
+  id: ID!
+  name: String
+}
+
+type Order {
+  id: ID!
+  pet: Pet!
+  quantity: Int
+  status: OrderStatus
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type PetConnection {
+  edges: [Pet!]!
+  pageInfo: PageInfo!
+}
+
+input CreatePetInput {
+  name: String!
+  status: PetStatus
+  tags: [ID!]
+}
+
+input UpdatePetInput {
+  name: String
+  status: PetStatus
+}
+
+type Query {
+  pets(limit: Int, offset: Int, status: PetStatus): [Pet!]!
+  pet(id: ID!): Pet
+  users(limit: Int): [User!]!
+  user(id: ID!): User
+  orders: [Order!]!
+  searchPets(query: String!): [SearchResult!]!
+  petsConnection(first: Int, after: String): PetConnection!
+}
+
+type Mutation {
+  createPet(input: CreatePetInput!): Pet!
+  updatePet(id: ID!, input: UpdatePetInput!): Pet
+  deletePet(id: ID!): Boolean!
+  createOrder(petId: ID!, quantity: Int): Order!
+}
+
+type Subscription {
+  petCreated: Pet!
+  petUpdated(id: ID!): Pet!
+  orderStatusChanged(orderId: ID!): Order!
+}
+
+extend type Query {
+  petsByOwner(ownerId: ID!): [Pet!]! @deprecated(reason: "Use pets with owner filter")
+}

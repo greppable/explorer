@@ -1,0 +1,6 @@
+@diagram|id:multi-gotcha-test|type:flow|purpose:Test gotcha severity sorting
+@node|id:A|label:Start
+@gotcha|issue:Minor thing|detail:Just informational|fix:Read docs|severity:info
+@gotcha|issue:Watch out|detail:Could cause issues|fix:Be careful|severity:warning
+@gotcha|issue:Critical failure|detail:Will break production|fix:Fix immediately|severity:critical
+@gotcha|issue:No severity set|detail:Severity unspecified|fix:Check defaults

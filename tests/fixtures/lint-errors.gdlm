@@ -1,0 +1,4 @@
+@memory|id:M-test-001|agent:test|subject:Testing|detail:First memory|ts:2026-02-01T10:00:00Z
+@memory|id:M-test-002|agent:test|subject:Testing|detail:Missing timestamp
+@memory|agent:test|subject:Testing|detail:Missing ID|ts:2026-02-01T11:00:00Z
+@memory|id:bad-id-format|agent:test|subject:Testing|detail:Bad ID convention|ts:2026-02-01T12:00:00Z

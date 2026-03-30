@@ -1,0 +1,7 @@
+# @VERSION spec:gdlc v:0.1.0 generated:2026-02-15 source:agent
+# Enrichments with orphaned entries
+
+@T GdlsParser|Parses GDLS schema files
+@T DeletedModule|This module no longer exists in skeleton
+parseGdlsFile|||||Main entry point
+deletedFunction|||||This function was removed

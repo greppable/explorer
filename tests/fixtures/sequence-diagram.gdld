@@ -1,0 +1,17 @@
+# Sequence Diagram Test
+@diagram|id:sequence-test|type:sequence|purpose:Test sequence diagram generation
+
+@participant|id:user|label:User|role:user
+@participant|id:api|label:API Server|role:system
+@participant|id:db|label:Database|role:database
+
+@msg|from:user|to:api|label:GET /users
+@msg|from:api|to:db|label:SELECT * FROM users|activate:true
+@msg|from:db|to:api|label:Results|type:response|deactivate:true
+@msg|from:api|to:user|label:JSON response|type:response
+
+@block|type:opt|label:If error
+@msg|from:api|to:user|label:Error 500|type:response
+@endblock
+
+@seq-note|over:api|text:Handles auth internally

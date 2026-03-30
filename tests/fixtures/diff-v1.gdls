@@ -1,0 +1,9 @@
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+@D finance|Finance domain
+@T GL_ACCOUNT|General Ledger
+GL_ACCOUNT_ID|INT|N|PK|Account identifier
+GL_TEXT_1|VARCHAR(50)|Y||Text field
+BALANCE|DECIMAL(18,2)|Y||Current balance
+@T GL_JOURNAL|Journal entries
+JOURNAL_ID|INT|N|PK|Journal identifier
+AMOUNT|DECIMAL(18,2)|N||Entry amount

@@ -1,0 +1,2 @@
+@source|id:U-CL-001|path:contracts/acme.pdf|format:pdf|type:contract|summary:Acme Corp MSA|ts:2026-01-15T10:00:00|refs:gdls:GL_ACCOUNT
+@extract|source:U-CL-001|id:X-CL-001|kind:entity|key:GL_ACCOUNT|value:Referenced in payment terms|confidence:high
