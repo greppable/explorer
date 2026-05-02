@@ -1,0 +1,63 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-03-24 source:api-agent
+# Project Atlas — Atlas Finance API v2 (target)
+
+@D atlas-finance-api|Atlas finance API for the modernised platform|2.0.0|https://api.acme.internal/finance/v2
+
+@AUTH bearer|JWT bearer issued by Acme SSO|Authorization
+@AUTH service_token|mTLS service-to-service token|x-service-token
+
+@S JournalEntry|Modernised journal entry payload
+ entryId|string|required|uuid|Primary key
+ postingDate|string|required|date|Effective accounting date
+ accountId|string|required|uuid|GeneralLedger account ID
+ amount|number|required||Posted amount in account currency
+ amountBase|number|||Base-currency translation
+ fxRate|number|||FX rate snapshot
+ sourceKind|string|required||MANUAL|PAYMENT|CDC|FX_REVAL|RECON_ADJUSTMENT|IMPORT
+ sourceEventId|string||uuid|Upstream event identifier
+ postedBy|string|required||Acting principal
+ postedAt|string|required|date-time|Server-side posting timestamp
+ reversesEntryId|string||uuid|Reversed entry, if applicable
+ batchId|string||uuid|Batch identifier
+ version|integer|required||Increments on supersession
+
+@S GeneralLedger|Modernised account payload
+ accountId|string|required|uuid|Primary key
+ accountCode|string|required||Chart of accounts code
+ accountName|string|required||Display name
+ status|string|required||ACTIVE|INACTIVE|CLOSED|FROZEN
+ currency|string|required||ISO currency
+ openedAt|string|required|date-time|Opening date
+
+@S ReconciliationRun|Reconciliation run summary
+ runId|string|required|uuid|Primary key
+ period|string|required||YYYY-MM
+ status|string|required||RUNNING|SUCCESS|VARIANCE|FAILED
+ varianceTotal|number|||Total variance
+ gatePassed|boolean|||Whether close was allowed
+
+@S AuditEvent|Audit event payload
+ auditId|string|required|uuid|Primary key
+ eventTs|string|required|date-time|Event timestamp
+ actor|string|required||Acting principal (always present in v2)
+ entity|string|required||Entity name
+ entityId|string|required|uuid|Entity ID
+ operation|string|required||INSERT|UPDATE|SUPERSEDE|REVERSE|CLOSE|GATE
+
+@EP GET /accounts|Lists active accounts|listAccounts
+@EP POST /accounts|Creates a new account|createAccount
+@EP GET /accounts/{id}|Returns a single account|getAccount
+@EP PATCH /accounts/{id}|Updates an account (mutates lifecycle)|patchAccount
+@EP GET /journal|Lists journal entries with filters|listJournalEntries
+@EP POST /journal|Posts a new manual journal entry|createJournalEntry
+@EP POST /journal/{id}/reverse|Reverses an entry|reverseJournalEntry
+@EP GET /journal/{id}/audit|Returns audit trail for the entry|getJournalAuditTrail
+@EP POST /reconciliation/{period}|Triggers reconciliation for a period|runReconciliation
+@EP GET /reconciliation/{period}|Returns reconciliation status|getReconciliation
+@EP POST /close/{period}|Triggers month-end close|runMonthEndClose
+@EP GET /close/{period}/gate|Returns gate status for the close|getCloseGate
+@EP GET /audit/stream|Server-sent stream of audit events|streamAudit
+
+@R JournalEntry -> GeneralLedger|references|JournalEntry posts against an account
+@R AuditEvent -> JournalEntry|references|AuditEvent often refers to a journal mutation
+@R ReconciliationRun -> JournalEntry|aggregates|Reconciliation summarises journal entries

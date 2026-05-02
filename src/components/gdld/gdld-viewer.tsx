@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { FlowchartViewer } from "./flowchart-viewer";
 import { SequenceViewer } from "./sequence-viewer";
 import { ContextPanel, hasContextContent } from "./context-panel";
@@ -22,6 +22,23 @@ export function GdldViewer({ file, onEntitySelect }: GdldViewerProps) {
   const [showContext, setShowContext] = useState(true);
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +86,7 @@ export function GdldViewer({ file, onEntitySelect }: GdldViewerProps) {
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div ref={containerRef} className={`flex flex-col h-full ${isFullscreen ? "bg-background" : ""}`}>
       {/* Toolbar */}
       <div className="px-3 py-2 border-b border-border/50 flex items-center gap-2 text-xs">
         <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-primary/10 text-primary">{model.diagram.type}</span>
@@ -123,6 +140,13 @@ export function GdldViewer({ file, onEntitySelect }: GdldViewerProps) {
             Context
           </button>
         )}
+        <button
+          onClick={toggleFullscreen}
+          className="px-2 py-0.5 rounded text-xs hover:bg-accent"
+          title={isFullscreen ? "Exit full screen" : "Full screen"}
+        >
+          {isFullscreen ? "\u2715" : "\u26F6"}
+        </button>
       </div>
 
       {/* Profile violation hint */}

@@ -1,0 +1,131 @@
+# Enterprise Data Platform — Data Architecture
+@diagram|id:data-platform|type:flow|purpose:End-to-end data architecture from ingestion through analytics and ML|direction:LR
+
+# ── Source systems ─────────────────────────────────────────
+@group|id:sources|label:Source Systems
+
+@node|id:ProdDB|label:Production Postgres|shape:database|group:sources
+@node|id:SaaS|label:SaaS APIs (Salesforce, Stripe)|shape:hexagon|group:sources
+@node|id:Clickstream|label:Clickstream (Segment)|shape:stadium|group:sources
+@node|id:IoT|label:IoT Sensor Fleet|shape:hexagon|group:sources
+@node|id:Logs|label:Application Logs|shape:stadium|group:sources
+
+# ── Ingestion layer ────────────────────────────────────────
+@group|id:ingestion|label:Ingestion Layer
+
+@node|id:Debezium|label:Debezium CDC|group:ingestion
+@node|id:Fivetran|label:Fivetran Connectors|group:ingestion
+@node|id:KafkaIngest|label:Kafka (raw topics)|shape:hexagon|group:ingestion
+@node|id:Kinesis|label:Kinesis Data Streams|group:ingestion
+
+@edge|from:ProdDB|to:Debezium|label:WAL CDC
+@edge|from:SaaS|to:Fivetran|label:API sync
+@edge|from:Clickstream|to:KafkaIngest|label:events
+@edge|from:IoT|to:Kinesis|label:telemetry stream
+@edge|from:Logs|to:KafkaIngest|label:structured logs
+
+# ── Raw / landing zone ─────────────────────────────────────
+@group|id:landing|label:Landing Zone (Raw)
+
+@node|id:S3Raw|label:S3 Raw Bucket|shape:database|group:landing
+@node|id:IcebergRaw|label:Iceberg Raw Tables|shape:database|group:landing
+@node|id:SchemaRegistry|label:Schema Registry|shape:diamond|group:landing
+
+@edge|from:Debezium|to:KafkaIngest|label:CDC events
+@edge|from:KafkaIngest|to:S3Raw|label:Kafka Connect sink
+@edge|from:Kinesis|to:S3Raw|label:Firehose delivery
+@edge|from:Fivetran|to:IcebergRaw|label:direct load
+@edge|from:KafkaIngest|to:SchemaRegistry|label:validates schemas
+
+# ── Transform layer ────────────────────────────────────────
+@group|id:transform|label:Transform Layer
+
+@node|id:Spark|label:Spark on EMR|group:transform
+@node|id:dbt|label:dbt Core|group:transform
+@node|id:Airflow|label:Airflow Orchestrator|shape:diamond|group:transform
+@node|id:GreatExpect|label:Great Expectations|shape:diamond|group:transform
+
+@edge|from:S3Raw|to:Spark|label:batch reads
+@edge|from:IcebergRaw|to:dbt|label:SQL transforms
+@edge|from:Airflow|to:Spark|label:schedules jobs
+@edge|from:Airflow|to:dbt|label:triggers runs
+@edge|from:Spark|to:GreatExpect|label:data quality checks
+@edge|from:dbt|to:GreatExpect|label:post-run tests
+
+# ── Curated / warehouse ───────────────────────────────────
+@group|id:warehouse|label:Curated Warehouse
+
+@node|id:IcebergCurated|label:Iceberg Curated Tables|shape:database|group:warehouse
+@node|id:Snowflake|label:Snowflake (Reporting)|shape:database|group:warehouse
+@node|id:DeltaFeatures|label:Delta Lake Feature Store|shape:database|group:warehouse
+
+@edge|from:Spark|to:IcebergCurated|label:writes curated
+@edge|from:dbt|to:Snowflake|label:materializes models
+@edge|from:Spark|to:DeltaFeatures|label:computes features
+
+# ── Serving / consumption ──────────────────────────────────
+@group|id:consumption|label:Consumption Layer
+
+@node|id:Looker|label:Looker Dashboards|shape:stadium|group:consumption
+@node|id:Notebook|label:Jupyter Notebooks|shape:stadium|group:consumption
+@node|id:MLPipeline|label:SageMaker ML Pipeline|group:consumption
+@node|id:ReverseETL|label:Census Reverse ETL|group:consumption
+@node|id:DataAPI|label:Data API (GraphQL)|group:consumption
+
+@edge|from:Snowflake|to:Looker|label:SQL queries
+@edge|from:IcebergCurated|to:Notebook|label:ad hoc analysis
+@edge|from:DeltaFeatures|to:MLPipeline|label:training data
+@edge|from:Snowflake|to:ReverseETL|label:syncs to SaaS
+@edge|from:ReverseETL|to:SaaS|label:enriched records|style:dashed
+@edge|from:IcebergCurated|to:DataAPI|label:serves queries
+
+# ── Governance & catalog ──────────────────────────────────
+@group|id:governance|label:Data Governance
+
+@node|id:DataHub|label:DataHub Catalog|group:governance
+@node|id:PII|label:PII Scanner|shape:diamond|group:governance
+@node|id:AccessCtrl|label:Lake Formation ACLs|group:governance
+@node|id:Lineage|label:Lineage Tracker|group:governance
+
+@edge|from:DataHub|to:IcebergCurated|label:catalogs tables
+@edge|from:DataHub|to:Snowflake|label:catalogs models
+@edge|from:PII|to:IcebergCurated|label:scans columns
+@edge|from:AccessCtrl|to:IcebergCurated|label:enforces policies
+@edge|from:Lineage|to:DataHub|label:publishes lineage
+@edge|from:dbt|to:Lineage|label:emits metadata
+@edge|from:Spark|to:Lineage|label:emits metadata
+
+# ── Views ──────────────────────────────────────────────────
+@view|id:ingestion-only|includes:sources,ingestion,landing|label:Ingestion Pipeline
+@view|id:transform-only|includes:landing,transform,warehouse|label:Transform Pipeline
+@view|id:consumption-only|includes:warehouse,consumption|label:Consumption Layer
+@view|id:governance-only|includes:governance|label:Governance Overview
+
+# ── Scenarios ──────────────────────────────────────────────
+@scenario|id:base
+@scenario|id:real-time|inherits:base|label:Real-Time Variant
+@override|scenario:real-time|target:Spark|field:label|value:Flink Streaming
+@override|scenario:real-time|target:Airflow|field:label|value:Kafka Streams Topology
+
+# ── Gotchas & decisions ────────────────────────────────────
+@gotcha|issue:CDC slot bloat|detail:Debezium replication slots grow unbounded if consumer falls behind; WAL retention can fill disk and crash Postgres|fix:Monitor pg_replication_slots; set max_slot_wal_keep_size; alert on replication lag > 1 GB
+@gotcha|issue:Schema evolution breaks Spark|detail:Adding a non-nullable column in source DB causes Spark Iceberg merge to fail with schema mismatch|fix:All CDC schema changes must be nullable-first; run schema compatibility check in CI before deploy
+@gotcha|issue:Snowflake cost spikes|detail:Ad-hoc Looker explores on large tables can spin up XL warehouses; monthly bill spiked 3x in Q3|fix:Per-user warehouse size caps; resource monitors with auto-suspend; query complexity guardrails in Looker
+
+@decision|id:ADR-031|title:Iceberg over Delta Lake for raw/curated|status:accepted|reason:Vendor-neutral table format; works across Spark, Trino, Snowflake without lock-in
+@decision|id:ADR-032|title:Debezium CDC over batch extracts|status:accepted|reason:Sub-minute latency for production data; batch extracts were 6h stale and caused reconciliation bugs
+@decision|id:ADR-033|title:dbt for SQL transforms, Spark for heavy compute|status:accepted|reason:dbt gives analysts self-serve; Spark handles joins over 500M+ rows where dbt/Snowflake times out
+
+@component|name:Airflow DAGs|file:orchestration/dags/|does:Schedules all batch ETL; ~80 DAGs across ingestion, transform, export
+@component|name:dbt Project|file:transform/dbt_project/|does:200+ models organized as staging -> intermediate -> marts
+@component|name:Great Expectations|file:quality/great_expectations/|does:Data quality suites for row counts, nulls, referential integrity, freshness
+
+@config|param:kafka.retention.ms|value:604800000|note:7-day retention on raw topics for replay
+@config|param:spark.executor.memory|value:8g|note:Tuned for Iceberg merge workloads
+@config|param:snowflake.warehouse.auto_suspend|value:60|note:Suspend idle warehouses after 60s
+
+@entry|use-case:Daily batch pipeline|command:Airflow triggers at 02:00 UTC -> Spark raw-to-curated -> dbt marts -> Looker cache warm
+@entry|use-case:Real-time clickstream|command:Segment -> Kafka -> S3 raw (5 min micro-batch) -> Spark streaming -> curated
+
+@note|context:cost|text:Snowflake accounts for 60% of data platform spend; Iceberg queries via Trino are 4x cheaper for internal analytics
+@note|context:compliance|text:PII scanner runs nightly; any new PII column auto-tagged and access-restricted within 24 h via Lake Formation

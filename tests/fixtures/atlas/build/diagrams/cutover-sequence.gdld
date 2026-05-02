@@ -1,0 +1,20 @@
+# @VERSION spec:gdld v:0.1.0 generated:2026-04-21 source:arch-agent
+# Project Atlas — shadow-write cutover sequence
+
+@diagram|id:atlas-cutover-seq|type:sequence|purpose:Three-phase cutover plan from shadow-write through full Atlas write authority|created:2026-04-21T11:00:00Z
+
+@participant|id:PaymentService|label:PaymentService|kind:external
+@participant|id:LegacyLedger|label:LegacyLedger|kind:store
+@participant|id:Atlas|label:Atlas Platform|kind:service
+@participant|id:Recon|label:Daily Reconciliation|kind:service
+@participant|id:Steering|label:Steering Committee|kind:actor
+
+@step|from:PaymentService|to:LegacyLedger|label:phase 1 — primary write|order:1
+@step|from:PaymentService|to:Atlas|label:phase 1 — shadow write (no auth)|order:2
+@step|from:Recon|to:LegacyLedger|label:phase 1 — read|order:3
+@step|from:Recon|to:Atlas|label:phase 1 — read|order:4
+@step|from:Recon|to:Steering|label:phase 1 — daily match report|order:5
+@step|from:Atlas|to:PaymentService|label:phase 2 — read API serves callers|order:6
+@step|from:PaymentService|to:Atlas|label:phase 3 — primary write|order:7
+@step|from:PaymentService|to:LegacyLedger|label:phase 3 — read-only mirror (30d)|order:8
+@step|from:Steering|to:Atlas|label:phase 4 — decommission legacy|order:9

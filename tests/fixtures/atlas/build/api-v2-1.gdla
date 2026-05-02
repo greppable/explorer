@@ -1,0 +1,49 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-04-04 source:api-agent
+# Project Atlas — Atlas Finance API v2.1 (mid-build evolution)
+
+@D atlas-finance-api|Atlas finance API mid-build snapshot|2.1.0|https://api.acme.internal/finance/v2
+
+@AUTH bearer|JWT bearer issued by Acme SSO|Authorization
+@AUTH service_token|mTLS service-to-service token|x-service-token
+
+@S JournalEntry|Mid-build journal entry — added validation envelope
+ entryId|string|required|uuid|Primary key
+ postingDate|string|required|date|Effective accounting date
+ accountId|string|required|uuid|GeneralLedger account ID
+ amount|number|required||Posted amount
+ amountBase|number|||Base-currency translation
+ fxRate|number|||FX rate snapshot
+ sourceKind|string|required||Origin classification
+ sourceEventId|string||uuid|Upstream event identifier
+ postedBy|string|required||Acting principal
+ postedAt|string|required|date-time|Server-side timestamp
+ reversesEntryId|string||uuid|Reversal pointer
+ batchId|string||uuid|Batch identifier
+ version|integer|required||Increments on supersession
+ validationOk|boolean|required||Set after validator runs (mid-build addition)
+
+@S ValidationError|New schema for explicit validator failures
+ code|string|required||Validation error code (e.g. ZERO_AMOUNT, ACCOUNT_CLOSED)
+ message|string|required||Human-readable message
+ entryId|string||uuid|Affected entry, if any
+
+@S GeneralLedger|Modernised account
+ accountId|string|required|uuid|Primary key
+ accountCode|string|required||Chart of accounts code
+ accountName|string|required||Display name
+ status|string|required||Lifecycle status
+ currency|string|required||ISO currency
+ openedAt|string|required|date-time|Opening date
+
+@EP GET /accounts|Lists active accounts|listAccounts
+@EP POST /accounts|Creates a new account|createAccount
+@EP GET /accounts/{id}|Returns a single account|getAccount
+@EP PATCH /accounts/{id}|Updates an account|patchAccount
+@EP GET /journal|Lists journal entries with filters|listJournalEntries
+@EP POST /journal|Posts a new manual journal entry|createJournalEntry
+@EP POST /journal/batch|Bulk posts journal entries (added Apr 4)|createJournalEntriesBatch
+@EP POST /journal/{id}/reverse|Reverses an entry|reverseJournalEntry
+@EP GET /journal/{id}/audit|Returns audit trail|getJournalAuditTrail
+
+@R JournalEntry -> GeneralLedger|references
+@R ValidationError -> JournalEntry|references|ValidationError refers to the rejected entry

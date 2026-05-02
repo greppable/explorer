@@ -1,0 +1,113 @@
+# Acme Corp — Systems Architecture
+@diagram|id:acme-systems|type:flow|purpose:Platform-wide service topology for Acme Corp SaaS|direction:TD
+
+# ── External boundary ──────────────────────────────────────
+@group|id:external|label:External
+
+@node|id:Browser|label:Web Browser|shape:stadium|group:external
+@node|id:MobileApp|label:Mobile App|shape:stadium|group:external
+@node|id:ThirdParty|label:Partner API|shape:hexagon|group:external
+
+# ── Edge / ingress ─────────────────────────────────────────
+@group|id:edge|label:Edge Layer
+
+@node|id:CDN|label:CloudFront CDN|group:edge
+@node|id:WAF|label:WAF / DDoS Shield|group:edge
+@node|id:LB|label:ALB Load Balancer|group:edge
+
+@edge|from:Browser|to:CDN|label:HTTPS
+@edge|from:MobileApp|to:CDN|label:HTTPS
+@edge|from:CDN|to:WAF|label:filtered traffic
+@edge|from:WAF|to:LB|label:clean traffic
+
+# ── API gateway & BFF ─────────────────────────────────────
+@group|id:gateway|label:API Gateway
+
+@node|id:APIGW|label:Kong API Gateway|group:gateway
+@node|id:BFF|label:BFF (Backend for Frontend)|group:gateway
+@node|id:RateLimiter|label:Rate Limiter|shape:diamond|group:gateway
+
+@edge|from:LB|to:APIGW|label:routes
+@edge|from:APIGW|to:RateLimiter|label:checks quota
+@edge|from:APIGW|to:BFF|label:forwards
+
+# ── Core services ──────────────────────────────────────────
+@group|id:core|label:Core Services
+
+@node|id:UserSvc|label:User Service|group:core
+@node|id:AuthSvc|label:Auth Service|group:core
+@node|id:BillingSvc|label:Billing Service|group:core
+@node|id:NotifySvc|label:Notification Service|group:core
+@node|id:SearchSvc|label:Search Service|group:core
+
+@edge|from:BFF|to:UserSvc|label:gRPC
+@edge|from:BFF|to:AuthSvc|label:gRPC
+@edge|from:BFF|to:BillingSvc|label:gRPC
+@edge|from:BFF|to:SearchSvc|label:gRPC
+@edge|from:UserSvc|to:NotifySvc|label:async event
+@edge|from:BillingSvc|to:NotifySvc|label:async event
+@edge|from:ThirdParty|to:APIGW|label:webhook
+
+# ── Async / messaging ─────────────────────────────────────
+@group|id:messaging|label:Event Bus
+
+@node|id:Kafka|label:Kafka Cluster|shape:hexagon|group:messaging
+@node|id:DLQ|label:Dead Letter Queue|shape:database|group:messaging
+
+@edge|from:UserSvc|to:Kafka|label:user.events
+@edge|from:BillingSvc|to:Kafka|label:payment.events
+@edge|from:Kafka|to:NotifySvc|label:consumes
+@edge|from:Kafka|to:DLQ|label:failed messages|style:dashed
+
+# ── Data layer ─────────────────────────────────────────────
+@group|id:data|label:Data Layer
+
+@node|id:UserDB|label:Users Postgres|shape:database|group:data
+@node|id:BillingDB|label:Billing Postgres|shape:database|group:data
+@node|id:Redis|label:Redis Cache|shape:database|group:data
+@node|id:Elastic|label:Elasticsearch|shape:database|group:data
+@node|id:S3|label:S3 Object Store|shape:database|group:data
+
+@edge|from:UserSvc|to:UserDB|label:reads/writes
+@edge|from:BillingSvc|to:BillingDB|label:reads/writes
+@edge|from:AuthSvc|to:Redis|label:session cache
+@edge|from:SearchSvc|to:Elastic|label:queries
+@edge|from:NotifySvc|to:S3|label:stores templates
+
+# ── Observability ──────────────────────────────────────────
+@group|id:observability|label:Observability
+
+@node|id:Prometheus|label:Prometheus|group:observability
+@node|id:Grafana|label:Grafana Dashboards|group:observability
+@node|id:Jaeger|label:Jaeger Tracing|group:observability
+@node|id:PagerDuty|label:PagerDuty|shape:hexagon|group:observability
+
+@edge|from:Prometheus|to:Grafana|label:metrics
+@edge|from:Grafana|to:PagerDuty|label:alerts
+@edge|from:Jaeger|to:Grafana|label:trace links
+
+# ── Views ──────────────────────────────────────────────────
+@view|id:request-path|filter:tags:core|label:Request Path Only
+@view|id:data-only|includes:data|label:Data Stores
+@view|id:external-facing|includes:external,edge,gateway|label:External-Facing
+
+# ── Gotchas & decisions ────────────────────────────────────
+@gotcha|issue:Kafka consumer lag|detail:Notification service can fall behind during billing runs; lag > 10 min triggers PagerDuty|fix:Scale notification consumer group; add backpressure on billing batch size
+@gotcha|issue:CDN cache invalidation|detail:Static assets cached for 24 h; stale JS after deploys causes 404s on lazy-loaded chunks|fix:Content-hash filenames + versioned deploy paths
+@gotcha|issue:Rate limiter bypass|detail:Internal services calling Kong bypass rate limits via service mesh; a runaway retry loop can saturate downstream|fix:Mesh-level circuit breakers + per-service quotas
+
+@decision|id:ADR-012|title:Kong over AWS API Gateway|status:accepted|reason:Need plugin ecosystem for custom auth + request transforms; AWS APIGW lacks gRPC transcoding
+@decision|id:ADR-015|title:Kafka over SQS for eventing|status:accepted|reason:Need ordering guarantees and replay capability for billing audit trail
+
+@component|name:Kong API Gateway|file:infra/kong/kong.yaml|does:Routes external traffic, enforces auth, rate limits, request transforms
+@component|name:User Service|file:services/user-svc/main.go|does:CRUD for user accounts, emits user.events to Kafka
+@component|name:Billing Service|file:services/billing-svc/main.go|does:Subscription management, payment processing via Stripe
+
+@config|param:kafka.replication.factor|value:3|note:Minimum for production durability
+@config|param:redis.maxmemory-policy|value:allkeys-lru|note:Evict least-recently-used when cache full
+@config|param:cdn.default-ttl|value:86400|note:24 h; override per-route for API responses
+
+@entry|use-case:Web login flow|command:Browser -> CDN -> WAF -> LB -> APIGW -> AuthSvc -> Redis
+@entry|use-case:Webhook ingestion|command:ThirdParty -> APIGW -> BillingSvc -> Kafka
+
+@note|context:scaling|text:User and Billing services auto-scale 2-8 pods based on CPU; Search is memory-bound and scales on JVM heap

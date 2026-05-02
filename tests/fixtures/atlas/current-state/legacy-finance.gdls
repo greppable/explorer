@@ -1,0 +1,69 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-03-04 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — reverse-engineered legacy finance schema (as-is)
+
+@D legacy_finance|Acme legacy ledger schema (Postgres 11) — produced by schema-agent reverse engineering
+
+@T GeneralLedger|Account master — root of the legacy ledger
+GL_ACCOUNT_ID|INTEGER|N|PK|Primary key
+GL_CODE|VARCHAR(20)|N||Account code (chart of accounts)
+GL_TEXT_1|VARCHAR(50)|Y||Primary account name
+GL_TEXT_2|VARCHAR(50)|Y||Secondary description (often unused)
+GL_STATUS|VARCHAR(20)|N||Account lifecycle status
+GL_PARENT_ID|INTEGER|Y|FK|Parent account (hierarchy)
+GL_CURRENCY|CHAR(3)|N||ISO 4217 currency code
+GL_CREATED_AT|TIMESTAMP|N||Row creation timestamp
+GL_UPDATED_AT|TIMESTAMP|Y||Last mutation timestamp
+@E GeneralLedger.GL_STATUS|ACTIVE,INACTIVE,SUSPENDED,ARCHIVED|Account lifecycle status
+
+@T JournalEntry|Journal entries posted against GeneralLedger accounts
+JE_ID|BIGINT|N|PK|Primary key
+JE_DATE|DATE|N||Posting date
+JE_ACCOUNT_REF|INTEGER|N|FK|Account reference
+JE_AMOUNT|DECIMAL(18,4)|N||Posted amount in account currency
+JE_FX_RATE|DECIMAL(12,6)|Y||Snapshot FX rate used for translation
+JE_SOURCE|VARCHAR(20)|N||How the entry originated
+JE_CREATED_BY|VARCHAR(50)|N||System or user that posted
+JE_REVERSED_BY|BIGINT|Y|FK|Reversing entry (if any)
+JE_BATCH_ID|VARCHAR(40)|Y|FK|Batch identifier for reconciliation
+@E JournalEntry.JE_SOURCE|MANUAL,AUTO,REVERSAL,IMPORT,FX_REVAL|Origin of the journal entry
+
+@T PaymentBatch|Batches feeding into the ledger from PaymentService
+PB_ID|VARCHAR(40)|N|PK|Batch identifier
+PB_RUN_AT|TIMESTAMP|N||When the batch ran
+PB_STATUS|VARCHAR(20)|N||Batch processing state
+PB_ENTRY_COUNT|INTEGER|N||Number of entries in batch
+PB_FAILED_COUNT|INTEGER|Y||Failures recorded during processing
+@E PaymentBatch.PB_STATUS|PENDING,PROCESSING,COMPLETED,FAILED,RECONCILED
+
+@T Customer|Customer master replicated from Salesforce nightly
+CUST_ID|VARCHAR(40)|N|PK|External customer identifier
+CUST_NAME|VARCHAR(120)|N||Display name
+CUST_TIER|VARCHAR(20)|Y||Service tier
+CUST_REGION|VARCHAR(40)|Y||Operational region
+CUST_SF_SYNC_AT|TIMESTAMP|Y||Last Salesforce sync
+@E Customer.CUST_TIER|STRATEGIC,ENTERPRISE,MID,SMB
+
+@T ReconciliationRun|Per-period reconciliation job results
+REC_ID|BIGINT|N|PK|Primary key
+REC_PERIOD|VARCHAR(7)|N||YYYY-MM period
+REC_STARTED_AT|TIMESTAMP|N||When reconciliation began
+REC_COMPLETED_AT|TIMESTAMP|Y||When reconciliation finished
+REC_VARIANCE|DECIMAL(18,4)|Y||Total unreconciled variance
+REC_STATUS|VARCHAR(20)|N||Reconciliation outcome
+@E ReconciliationRun.REC_STATUS|SUCCESS,VARIANCE,FAILED,IN_PROGRESS
+
+@T AuditLog|Append-only audit trail (currently truncated annually — non-compliant)
+AUDIT_ID|BIGINT|N|PK|Primary key
+AUDIT_TS|TIMESTAMP|N||Event timestamp
+AUDIT_ACTOR|VARCHAR(80)|Y||Acting user or service (often null in legacy)
+AUDIT_ENTITY|VARCHAR(40)|N||Entity name affected
+AUDIT_ENTITY_ID|VARCHAR(80)|N||Entity primary key
+AUDIT_OP|VARCHAR(10)|N||Operation type
+@E AuditLog.AUDIT_OP|INSERT,UPDATE,DELETE,REVERSE
+
+@R JournalEntry.JE_ACCOUNT_REF -> GeneralLedger.GL_ACCOUNT_ID|fk|Journal entry to account
+@R JournalEntry.JE_REVERSED_BY -> JournalEntry.JE_ID|fk|Self-referential reversal
+@R JournalEntry.JE_BATCH_ID -> PaymentBatch.PB_ID|fk|Entry to source batch
+@R GeneralLedger.GL_PARENT_ID -> GeneralLedger.GL_ACCOUNT_ID|fk|Account hierarchy
+@R PaymentBatch.PB_ID -> ReconciliationRun.REC_ID|reconciles|Batch reconciliation linkage

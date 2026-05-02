@@ -1,0 +1,36 @@
+# @VERSION spec:gdlm v:0.1.0 generated:2026-03-15 source:agent
+# Project Atlas — Current state analysis memories
+
+@memory|id:M-ATL-C001|agent:schema-agent|type:observation|subject:GeneralLedger|detail:Reverse-engineered 47 tables; finance core sits in 11 of them with the rest being staging or audit|tags:schema,inventory|anchor:legacy-as-is|confidence:high|ts:2026-03-02T10:00:00Z
+@memory|id:M-ATL-C002|agent:schema-agent|type:observation|subject:JournalEntry|detail:JournalEntry table has 1.2B rows; partition strategy is monthly but no automated maintenance|tags:scale,partitioning|anchor:legacy-as-is|confidence:high|ts:2026-03-02T11:00:00Z
+@memory|id:M-ATL-C003|agent:schema-agent|type:observation|subject:GeneralLedger|detail:23 indexes on JournalEntry; 9 unused per pg_stat_user_indexes — quick cleanup win|tags:performance,indexes|anchor:legacy-as-is|confidence:high|ts:2026-03-02T13:00:00Z
+@memory|id:M-ATL-C004|agent:schema-agent|type:fact|subject:GeneralLedger|detail:GL_TEXT_2 column is null in 99.7% of rows — appears to be vestigial|tags:schema,unused|anchor:legacy-as-is|confidence:high|ts:2026-03-02T14:00:00Z
+@memory|id:M-ATL-C005|agent:schema-agent|type:error|subject:JournalEntry|detail:Found 14k orphan journal entries with JE_ACCOUNT_REF pointing to deleted accounts — referential integrity gap|tags:data-quality,bug|anchor:legacy-as-is|confidence:high|ts:2026-03-03T09:00:00Z
+@memory|id:M-ATL-C006|agent:schema-agent|type:observation|subject:Customer|detail:Customer table is replicated nightly from Salesforce but no foreign key into GeneralLedger journal|tags:schema,gap|anchor:legacy-as-is|confidence:high|ts:2026-03-03T10:00:00Z
+@memory|id:M-ATL-C007|agent:schema-agent|type:decision|subject:GeneralLedger|detail:For new schema, GL_TEXT_2 will be dropped; preserved field history captured in migration log|tags:schema,decision|anchor:ledger-modernization|confidence:high|ts:2026-03-03T15:00:00Z
+
+@memory|id:M-ATL-C010|agent:schema-agent|type:observation|subject:AuditLog|detail:AuditLog is truncated each January — last 11 months only — flagged as SOX gap|tags:audit,compliance,critical|anchor:audit-controls|confidence:high|ts:2026-03-04T11:00:00Z
+@memory|id:M-ATL-C011|agent:schema-agent|type:observation|subject:AuditLog|detail:AUDIT_ACTOR is null in 38% of rows — service-account writes don't capture caller|tags:audit,gap|anchor:audit-controls|confidence:high|ts:2026-03-04T11:30:00Z
+@memory|id:M-ATL-C012|agent:schema-agent|type:decision|subject:AuditLog|detail:New audit must be append-only Kafka stream + Postgres mirror; never truncated|tags:audit,decision|anchor:audit-controls|relates:supports~M-ATL-D052|confidence:high|ts:2026-03-04T14:00:00Z
+
+@memory|id:M-ATL-C020|agent:code-agent|type:observation|subject:LegacyLedger|detail:LegacyLedgerPkg is 18,400 lines of PL/SQL across 12 procedures; cyclomatic complexity averages 47|tags:complexity,legacy|anchor:legacy-as-is|confidence:high|ts:2026-03-05T10:00:00Z
+@memory|id:M-ATL-C021|agent:code-agent|type:observation|subject:LegacyLedger|detail:postEntry has 7 different code paths for FX handling; consolidation opportunity for new code|tags:fx,refactor|anchor:legacy-as-is|confidence:high|ts:2026-03-05T11:00:00Z
+@memory|id:M-ATL-C022|agent:code-agent|type:error|subject:LegacyLedger|detail:Found 3 places where exception handlers swallow errors silently; each maps to a known prod incident|tags:bug,silent-failure|anchor:legacy-as-is|confidence:high|ts:2026-03-05T12:00:00Z
+@memory|id:M-ATL-C023|agent:code-agent|type:observation|subject:LegacyETL|detail:Python ETL has zero test coverage — 4,800 lines, 0 tests|tags:tests,gap|anchor:legacy-as-is|confidence:high|ts:2026-03-05T14:00:00Z
+@memory|id:M-ATL-C024|agent:code-agent|type:observation|subject:LegacyETL|detail:Hard-coded credentials found in legacy/etl/python/extract.py — escalated to security team|tags:security,critical|anchor:legacy-as-is|confidence:high|ts:2026-03-06T09:00:00Z
+@memory|id:M-ATL-C025|agent:code-agent|type:decision|subject:LegacyETL|detail:Python portion will be rewritten in Go for new platform; PL/SQL replaced by Postgres functions + service code|tags:tech-stack,decision|anchor:ledger-modernization|confidence:high|ts:2026-03-06T11:00:00Z
+
+@memory|id:M-ATL-C030|agent:code-agent|type:observation|subject:PaymentService|detail:PaymentService team confirmed they emit Kafka events for every payment — switching from batch to event-driven is feasible|tags:kafka,event-driven|anchor:ledger-modernization|confidence:high|ts:2026-03-06T14:00:00Z
+@memory|id:M-ATL-C031|agent:arch-agent|type:decision|subject:PaymentService|detail:New ledger will consume PaymentService Kafka topics directly — eliminates overnight batch latency|tags:kafka,decision|anchor:ledger-modernization|relates:supports~M-ATL-C030|confidence:high|ts:2026-03-06T15:00:00Z
+
+@memory|id:M-ATL-C040|agent:arch-agent|type:observation|subject:Analytics|detail:Analytics team is reading directly from production Postgres — anti-pattern; Snowflake migration will fix|tags:anti-pattern,snowflake|anchor:snowflake-migration|confidence:high|ts:2026-03-09T10:00:00Z
+@memory|id:M-ATL-C041|agent:arch-agent|type:observation|subject:Looker|detail:14 Looker dashboards are coupled to legacy column names — translation layer required during cutover|tags:looker,migration|anchor:snowflake-migration|confidence:high|ts:2026-03-09T11:00:00Z
+@memory|id:M-ATL-C042|agent:arch-agent|type:decision|subject:SnowflakeDW|detail:Snowflake landing zone will mirror Postgres OLTP via Debezium CDC; transformations in dbt|tags:snowflake,architecture|anchor:snowflake-migration|confidence:high|ts:2026-03-09T14:00:00Z
+
+@memory|id:M-ATL-C050|agent:arch-agent|type:observation|subject:LegacyETL|detail:Informatica licenses cost Acme $180k/year — replacing eliminates this cost|tags:cost,licensing|anchor:legacy-as-is|confidence:high|ts:2026-03-10T11:00:00Z
+@memory|id:M-ATL-C051|agent:arch-agent|type:fact|subject:LegacyApi|detail:Legacy finance API has 47 endpoints; 12 are unused per access logs (90 days) — candidates for deprecation|tags:api,deprecation|anchor:legacy-as-is|confidence:high|ts:2026-03-10T13:00:00Z
+@memory|id:M-ATL-C052|agent:arch-agent|type:decision|subject:LegacyApi|detail:New API contract will preserve top 35 endpoints with semantic-equivalent paths; 12 deprecated|tags:api,decision|anchor:ledger-modernization|relates:supports~M-ATL-C051|confidence:high|ts:2026-03-10T14:00:00Z
+
+@memory|id:M-ATL-C060|agent:arch-agent|type:observation|subject:Atlas|detail:Cutover window will be the most fraught moment — proposed shadow-write strategy for 2-week dual run|tags:cutover,risk|anchor:ledger-modernization|confidence:high|ts:2026-03-12T10:00:00Z
+@memory|id:M-ATL-C061|agent:tech-lead|type:decision|subject:Atlas|detail:Approved shadow-write strategy: new system writes alongside legacy, automated reconciliation gates promotion|tags:cutover,decision|anchor:ledger-modernization|relates:supports~M-ATL-C060|confidence:high|ts:2026-03-12T11:00:00Z
+@memory|id:M-ATL-C062|agent:tech-lead|type:decision|subject:Atlas|detail:Current state analysis formally complete; gate to design phase passed in steering committee|tags:gate,phase-complete|anchor:ledger-modernization|confidence:high|ts:2026-03-13T16:00:00Z

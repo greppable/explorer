@@ -1,0 +1,35 @@
+# @VERSION spec:gdlm v:0.1.0 generated:2026-03-29 source:agent
+# Project Atlas — Tech design phase memories
+
+@anchor|concept:event-driven|scope:kafka,events,streaming,cdc,topic
+@anchor|concept:cutover-strategy|scope:cutover,shadow-write,migration,rollback
+
+@memory|id:M-ATL-T001|agent:tech-lead|type:decision|subject:LedgerSvc|detail:LedgerService chosen as the authoritative posting service; Go for performance and small operational footprint|tags:tech-stack,decision|anchor:ledger-modernization|confidence:high|ts:2026-03-09T10:00:00Z
+@memory|id:M-ATL-T002|agent:tech-lead|type:decision|subject:PostingSvc|detail:Separate PostingService consumes events and validates before invoking LedgerService — keeps validation testable in isolation|tags:architecture,decision|anchor:event-driven|confidence:high|ts:2026-03-09T11:00:00Z
+@memory|id:M-ATL-T003|agent:tech-lead|type:decision|subject:AuditSvc|detail:Dedicated AuditService writes to Kafka first then mirrors to Postgres — Kafka is source of truth for audit|tags:audit,decision|anchor:audit-controls|relates:supports~M-ATL-C012|confidence:high|ts:2026-03-09T11:30:00Z
+
+@memory|id:M-ATL-T010|agent:arch-agent|type:decision|subject:JournalEntry|detail:JournalEntry to be UUID-keyed and version-stamped; immutability via supersession instead of UPDATE|tags:schema,decision|anchor:audit-controls|confidence:high|ts:2026-03-10T10:00:00Z
+@memory|id:M-ATL-T011|agent:arch-agent|type:decision|subject:GeneralLedger|detail:account_id moves from INTEGER to UUID; legacy IDs preserved in mapping table during cutover|tags:schema,migration|anchor:cutover-strategy|confidence:high|ts:2026-03-10T10:30:00Z
+@memory|id:M-ATL-T012|agent:schema-agent|type:observation|subject:JournalEntry|detail:NUMERIC(28,8) chosen over DECIMAL(18,4) for amounts to support FX of currencies with 8-place precision (BTC etc.)|tags:precision,decision|anchor:ledger-modernization|confidence:high|ts:2026-03-11T11:00:00Z
+
+@memory|id:M-ATL-T020|agent:tech-lead|type:decision|subject:Atlas|detail:All services Go 1.22, single shared module layout with internal packages — agreed with platform team|tags:tech-stack,decision|anchor:ledger-modernization|confidence:high|ts:2026-03-12T13:00:00Z
+@memory|id:M-ATL-T021|agent:tech-lead|type:decision|subject:Atlas|detail:Postgres 16 with logical replication enabled for Debezium CDC|tags:postgres,cdc|anchor:event-driven|confidence:high|ts:2026-03-12T14:00:00Z
+@memory|id:M-ATL-T022|agent:arch-agent|type:decision|subject:KafkaIngest|detail:Single Kafka cluster shared across services; topic naming convention atlas.finance.<entity>.events|tags:kafka,convention|anchor:event-driven|confidence:high|ts:2026-03-12T15:00:00Z
+
+@memory|id:M-ATL-T030|agent:arch-agent|type:observation|subject:PaymentService|detail:PaymentService team confirmed compatibility with proposed event schema; minor renaming required|tags:integration,coordination|anchor:event-driven|confidence:high|ts:2026-03-13T10:00:00Z
+@memory|id:M-ATL-T031|agent:arch-agent|type:decision|subject:PaymentService|detail:Versioned event schema using Avro + Schema Registry — Acme already runs one|tags:schema,registry|anchor:event-driven|confidence:high|ts:2026-03-13T11:00:00Z
+
+@memory|id:M-ATL-T040|agent:tech-lead|type:decision|subject:Atlas|detail:Cutover phase 1 will shadow-write only — both legacy and new ledgers write the same event for 14 days|tags:cutover,decision|anchor:cutover-strategy|relates:supports~M-ATL-C061|confidence:high|ts:2026-03-16T10:00:00Z
+@memory|id:M-ATL-T041|agent:tech-lead|type:decision|subject:Atlas|detail:Cutover phase 2 routes reads to Atlas API while writes still go to legacy; reconciliation gates phase 3|tags:cutover,decision|anchor:cutover-strategy|confidence:high|ts:2026-03-16T11:00:00Z
+@memory|id:M-ATL-T042|agent:tech-lead|type:decision|subject:Atlas|detail:Cutover phase 3 inverts: writes route to Atlas, legacy is read-only for 30 days then decommissioned|tags:cutover,decision|anchor:cutover-strategy|confidence:high|ts:2026-03-16T11:30:00Z
+@memory|id:M-ATL-T043|agent:tech-lead|type:decision|subject:Atlas|detail:Rollback playbook approved — at any phase, can revert to prior phase within one steering call|tags:cutover,risk-mgmt|anchor:cutover-strategy|confidence:high|ts:2026-03-16T13:00:00Z
+
+@memory|id:M-ATL-T050|agent:arch-agent|type:decision|subject:SnowflakeDW|detail:Snowflake landing zone schema mirrors Postgres OLTP tables — minimal transformation in CDC pipeline|tags:snowflake,decision|anchor:snowflake-migration|relates:supports~M-ATL-C042|confidence:high|ts:2026-03-17T10:00:00Z
+@memory|id:M-ATL-T051|agent:arch-agent|type:decision|subject:Looker|detail:Looker LookML must be regenerated against new column names; translation views provide bridge during cutover|tags:looker,migration|anchor:snowflake-migration|confidence:high|ts:2026-03-17T11:00:00Z
+
+@memory|id:M-ATL-T060|agent:arch-agent|type:observation|subject:Atlas|detail:Architecture review with Acme platform team raised concerns about cross-service transactionality|tags:review,concern|anchor:ledger-modernization|confidence:high|ts:2026-03-19T13:00:00Z
+@memory|id:M-ATL-T061|agent:tech-lead|type:decision|subject:LedgerSvc|detail:Adopted Saga pattern with compensating actions for cross-service ledger operations to address transactionality concerns|tags:saga,decision|anchor:ledger-modernization|relates:supports~M-ATL-T060|confidence:high|ts:2026-03-19T15:00:00Z
+@memory|id:M-ATL-T062|agent:tech-lead|type:decision|subject:Atlas|detail:Tech design phase signed off — Stewart and Priya approved in steering committee|tags:gate,phase-complete|anchor:ledger-modernization|confidence:high|ts:2026-03-25T16:00:00Z
+
+@memory|id:M-ATL-T070|agent:tech-lead|type:decision|subject:Atlas|detail:Build streams allocated: Stream A (LedgerSvc/PostingSvc), Stream B (ReconSvc/CloseSvc), Stream C (AuditSvc + Snowflake)|tags:planning,build|anchor:ledger-modernization|confidence:high|ts:2026-03-26T10:00:00Z
+@memory|id:M-ATL-T071|agent:tech-lead|type:decision|subject:Atlas|detail:Build agents to be spun up: build-agent-1 (Stream A), build-agent-2 (Stream B), build-agent-3 (Stream C)|tags:agents,build|anchor:ledger-modernization|confidence:high|ts:2026-03-26T11:00:00Z

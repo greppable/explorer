@@ -1,0 +1,13 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-04-04 source:build-agent-3
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — Stream C (AuditSvc + Snowflake landing) initial structure
+
+@D atlas/internal/audit|Stream C — audit pipeline (build-agent-3)
+
+@F atlas/internal/audit/emitter.go|go|Emitter|atlas/internal/kafka|Emits audit events to Kafka
+@F atlas/internal/audit/mirror.go|go|Mirror|atlas/internal/audit/emitter|Mirrors Kafka audit events to Postgres
+
+@D atlas/internal/cdc|Stream C — Snowflake landing zone
+
+@F atlas/internal/cdc/debezium.go|go|DebeziumStream|github.com/debezium/connect|Debezium consumer for OLTP CDC
+@F atlas/internal/cdc/snowflake_writer.go|go|SnowflakeWriter|github.com/snowflakedb/gosnowflake|Lands CDC payloads in Snowflake landing tables

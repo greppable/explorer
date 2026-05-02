@@ -1,0 +1,54 @@
+# @VERSION spec:gdld v:0.1.0 generated:2026-03-19 source:arch-agent
+# Project Atlas — Target architecture (to-be)
+
+@diagram|id:atlas-target|type:flow|purpose:Target enterprise architecture for the modernised Atlas ledger platform|direction:LR|created:2026-03-19T11:00:00Z
+
+@group|id:sources|label:Source Systems
+@node|id:Salesforce|label:Salesforce CRM|shape:hexagon|group:sources
+@node|id:PaymentService|label:PaymentService|shape:hexagon|group:sources
+@node|id:HRSystem|label:HR System|shape:hexagon|group:sources
+@node|id:BankingFeeds|label:Banking SFTP Feeds|shape:hexagon|group:sources
+
+@group|id:streaming|label:Event Backbone
+@node|id:KafkaIngest|label:Kafka (event stream)|shape:hexagon|group:streaming
+@node|id:Debezium|label:Debezium CDC|group:streaming
+
+@group|id:atlas|label:Atlas Platform
+@node|id:LedgerSvc|label:LedgerService (Go)|group:atlas
+@node|id:PostingSvc|label:PostingService (Go)|group:atlas
+@node|id:ReconSvc|label:ReconciliationService (Go)|group:atlas
+@node|id:CloseSvc|label:MonthEndCloseService (Go)|group:atlas
+@node|id:AuditSvc|label:AuditService (Go)|group:atlas
+@node|id:NewLedgerApi|label:Atlas Finance API v2|group:atlas
+
+@group|id:storage|label:Stores
+@node|id:GeneralLedger|label:GeneralLedger (Postgres 16)|shape:database|group:storage
+@node|id:JournalEntry|label:JournalEntry (Postgres 16)|shape:database|group:storage
+@node|id:AuditLog|label:AuditLog (append-only Kafka + Postgres mirror)|shape:database|group:storage
+@node|id:SnowflakeDW|label:Snowflake DW|shape:database|group:storage
+
+@group|id:downstream|label:Downstream
+@node|id:Looker|label:Looker Dashboards|group:downstream
+@node|id:Dashboards|label:Finance Dashboards|group:downstream
+@node|id:Analytics|label:Analytics Workbench|group:downstream
+
+@edge|from:Salesforce|to:Debezium|label:CDC
+@edge|from:PaymentService|to:KafkaIngest|label:Event stream
+@edge|from:HRSystem|to:KafkaIngest|label:Allocations
+@edge|from:BankingFeeds|to:KafkaIngest|label:Bank events
+@edge|from:Debezium|to:KafkaIngest|label:CDC events
+@edge|from:KafkaIngest|to:PostingSvc|label:Consumes events
+@edge|from:PostingSvc|to:LedgerSvc|label:Validated postings
+@edge|from:LedgerSvc|to:GeneralLedger|label:Writes
+@edge|from:LedgerSvc|to:JournalEntry|label:Writes
+@edge|from:LedgerSvc|to:AuditSvc|label:Audit events
+@edge|from:AuditSvc|to:AuditLog|label:Append
+@edge|from:LedgerSvc|to:NewLedgerApi|label:Read API
+@edge|from:ReconSvc|to:JournalEntry|label:Reads
+@edge|from:CloseSvc|to:LedgerSvc|label:Orchestrates close
+@edge|from:GeneralLedger|to:Debezium|label:CDC out
+@edge|from:JournalEntry|to:Debezium|label:CDC out
+@edge|from:Debezium|to:SnowflakeDW|label:Lands raw
+@edge|from:SnowflakeDW|to:Looker|label:Analytical reads
+@edge|from:SnowflakeDW|to:Dashboards|label:Analytical reads
+@edge|from:SnowflakeDW|to:Analytics|label:Analytical reads

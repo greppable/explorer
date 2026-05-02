@@ -82,7 +82,11 @@ export function GdlmViewer({ file, onEntitySelect }: GdlmViewerProps) {
         <div className="flex-1 min-w-0 relative">
           <div className="absolute inset-0">
             {viewMode === "graph" ? (
+              // key={file.path} forces a remount when switching files so the
+              // graph's internal state (visibleTypesOverride, selectedNodeId)
+              // resets cleanly with the new dataset.
               <KnowledgeGraph
+                key={file.path}
                 data={data}
                 onSubjectSelect={setSelectedSubject}
               />
@@ -99,12 +103,13 @@ export function GdlmViewer({ file, onEntitySelect }: GdlmViewerProps) {
 
         {/* Subject detail sidebar */}
         {selectedSubject && (
-          <div className="w-56 border-l border-border/50 flex-shrink-0 relative">
+          <div className="w-64 border-l border-border/50 flex-shrink-0 relative">
             <div className="absolute inset-0">
               <MemoryDetail
                 subject={selectedSubject}
                 memories={data.memories}
                 onEntitySelect={onEntitySelect}
+                onClose={() => setSelectedSubject(null)}
               />
             </div>
           </div>

@@ -1,15 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
+import { X } from "lucide-react";
 import type { GdlmMemory } from "@/lib/parsers/gdlm-parser";
 
 interface MemoryDetailProps {
   subject: string;
   memories: GdlmMemory[];
   onEntitySelect?: (entity: string) => void;
+  onClose?: () => void;
 }
 
-export function MemoryDetail({ subject, memories, onEntitySelect }: MemoryDetailProps) {
+export function MemoryDetail({ subject, memories, onEntitySelect, onClose }: MemoryDetailProps) {
   const sorted = useMemo(
     () =>
       [...memories]
@@ -21,16 +23,36 @@ export function MemoryDetail({ subject, memories, onEntitySelect }: MemoryDetail
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2
-            className="font-mono text-xs font-semibold cursor-pointer hover:text-primary transition-colors"
-            onClick={() => onEntitySelect?.(subject)}
-          >
-            {subject}
+        <div className="flex items-center justify-between gap-2">
+          {/* h2 wraps a button rather than carrying onClick directly so the
+              heading is keyboard-accessible (Tab + Enter) and announced as
+              interactive by assistive tech. */}
+          <h2 className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => onEntitySelect?.(subject)}
+              title={subject}
+              className="block w-full truncate text-left font-mono text-xs font-semibold transition-colors hover:text-primary"
+            >
+              {subject}
+            </button>
           </h2>
-          <span className="text-[10px] font-mono text-muted-foreground">
-            {sorted.length} memor{sorted.length !== 1 ? "ies" : "y"}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-mono text-muted-foreground">
+              {sorted.length} memor{sorted.length !== 1 ? "ies" : "y"}
+            </span>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md p-1 text-muted-foreground/45 transition-colors hover:bg-muted/40 hover:text-foreground"
+                aria-label="Close memory detail"
+                title="Close"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {sorted.map((mem) => (

@@ -1,0 +1,16 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-04-07 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — migration 0005: audit_event with mandatory actor (Apr 7)
+
+@D atlas_finance|Audit event table — actor now mandatory (closes legacy gap)
+
+@T AuditEvent|Append-only audit events mirrored from Kafka — actor required at row level
+audit_id|UUID|N|PK|Primary key
+event_ts|TIMESTAMPTZ|N||Event timestamp
+actor|VARCHAR(120)|N||Acting principal (mandatory in new platform)
+entity|VARCHAR(40)|N||Entity affected
+entity_id|UUID|N||Entity identifier
+operation|VARCHAR(20)|N||Operation type
+prior_version|INTEGER|Y||Previous version, for SUPERSEDE
+new_version|INTEGER|Y||Resulting version
+@E AuditEvent.operation|INSERT,UPDATE,SUPERSEDE,REVERSE,CLOSE,GATE

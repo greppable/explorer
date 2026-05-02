@@ -26,15 +26,38 @@ import {
   Expand,
   LayoutGrid,
   GitFork,
+  Boxes,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GraphData } from "@/lib/graph/types";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import type { GraphData, GraphNodeType } from "@/lib/graph/types";
 import { applyLayout, type LayoutMode } from "@/lib/graph/layout-utils";
+import {
+  CLUSTER_PREFIX,
+  CLUSTER_THRESHOLD,
+  buildClusters,
+  expandClusters,
+  shouldCluster,
+} from "@/lib/graph/clustering";
+import { RECENT_LIMIT, pickRecentSubgraph } from "@/lib/graph/recent";
+import type { TimelinePayload } from "@/lib/timeline/types";
 import { GdlNodeComponent, type GdlNodeData } from "./gdl-node";
+import { ClusterNodeComponent, type ClusterNodeData } from "./cluster-node";
 import { NodeDetailPanel } from "./node-detail-panel";
 import { BRAND, ALL_NODE_TYPES, NODE_STYLES } from "./constants";
 
-const nodeTypes = { gdlNode: GdlNodeComponent };
+const nodeTypes = {
+  gdlNode: GdlNodeComponent,
+  gdlCluster: ClusterNodeComponent,
+};
+
+type AnyNodeData = GdlNodeData | ClusterNodeData;
+type ClusterMode = "recent" | "auto" | "all";
 
 // Common edge labels that are noise — hide them
 const HIDDEN_LABELS = new Set(["in", "containment"]);
@@ -43,9 +66,10 @@ const HIDDEN_LABELS = new Set(["in", "containment"]);
 
 interface KnowledgeGraphInnerProps {
   onEntitySelect?: (entity: string) => void;
+  onOpenInExplorer?: (filePath: string, line?: number) => void;
 }
 
-function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
+function KnowledgeGraphInner({ onEntitySelect, onOpenInExplorer }: KnowledgeGraphInnerProps) {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +81,17 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<GdlNodeData>>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<AnyNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const edgesRef = useRef<Edge[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const { fitView, zoomIn, zoomOut } = useReactFlow();
+  // Clustering / scaling state
+  const [clusterMode, setClusterMode] = useState<ClusterMode>("recent");
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
+  const [timelineEvents, setTimelineEvents] = useState<TimelinePayload["events"]>([]);
+
+  const { fitView, zoomIn, zoomOut, setCenter } = useReactFlow();
 
   // Debounce search to avoid re-layout on every keystroke
   useEffect(() => {
@@ -90,19 +119,27 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  // Fetch graph data
+  // Fetch graph + timeline data in parallel. Timeline failures don't block the
+  // graph — Recent mode just scores entities as 0 (oldest) without it.
   useEffect(() => {
     let cancelled = false;
 
     async function fetchGraph() {
       try {
-        const res = await fetch("/api/graph");
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error ?? `Failed to fetch (${res.status})`);
+        const [graphRes, timelineRes] = await Promise.all([
+          fetch("/api/graph"),
+          fetch("/api/timeline"),
+        ]);
+        if (!graphRes.ok) {
+          const data = await graphRes.json();
+          throw new Error(data.error ?? `Failed to fetch (${graphRes.status})`);
         }
-        const data: GraphData = await res.json();
+        const data: GraphData = await graphRes.json();
         if (!cancelled) setGraphData(data);
+        if (timelineRes.ok) {
+          const tl: TimelinePayload = await timelineRes.json();
+          if (!cancelled) setTimelineEvents(tl.events);
+        }
       } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load graph");
@@ -116,13 +153,58 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
     return () => { cancelled = true; };
   }, []);
 
+  // Compute the clustered representation once per data load (pure)
+  const clustered = useMemo(() => {
+    if (!graphData) return null;
+    return buildClusters(graphData);
+  }, [graphData]);
+
+  // Reset expansion + selection when graph data reloads
+  useEffect(() => {
+    setExpandedClusters(new Set());
+    setSelectedNodeId(null);
+  }, [graphData]);
+
+  // Whether the dataset is in scope for the scaling controls at all
+  const datasetIsLarge = useMemo(
+    () => (graphData ? shouldCluster(graphData) : false),
+    [graphData],
+  );
+
+  /**
+   * Recent subgraph — capped at RECENT_LIMIT entities, scored by latest
+   * timeline mention. Computed once per (graphData, timelineEvents) and reused
+   * by the build effect when in Recent mode.
+   */
+  const recentGraph = useMemo(() => {
+    if (!graphData) return null;
+    return pickRecentSubgraph(graphData, timelineEvents, RECENT_LIMIT);
+  }, [graphData, timelineEvents]);
+
+  const isClusteredView = clusterMode === "auto" && datasetIsLarge;
+  const isRecentView = clusterMode === "recent" && datasetIsLarge;
+
   // Build React Flow nodes/edges from graph data with filtering
   useEffect(() => {
     if (!graphData) return;
 
     const lowerQuery = debouncedSearch.toLowerCase();
 
-    const filteredNodes = graphData.nodes.filter((node) => {
+    // ── Decide what nodes/edges feed the renderer ────────────────────
+    let baseNodes = graphData.nodes;
+    let baseEdges = graphData.edges;
+    if (isRecentView && recentGraph) {
+      baseNodes = recentGraph.nodes;
+      baseEdges = recentGraph.edges;
+    } else if (isClusteredView && clustered) {
+      const expanded = expandClusters(graphData, clustered, expandedClusters);
+      baseNodes = expanded.nodes;
+      baseEdges = expanded.edges;
+    }
+
+    const filteredNodes = baseNodes.filter((node) => {
+      // Cluster supernodes always pass the type filter (the filter is conceptually
+      // about which clusters/types to render — hiding a layer's cluster too).
       if (!activeFilters.has(node.type)) return false;
       if (lowerQuery) {
         return (
@@ -136,41 +218,74 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
 
     const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
 
-    const filteredEdges = graphData.edges.filter(
+    const filteredEdges = baseEdges.filter(
       (e) => filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target),
     );
 
-    const rfNodes: Node<GdlNodeData>[] = filteredNodes.map((node) => ({
-      id: node.id,
-      type: "gdlNode",
-      position: { x: 0, y: 0 },
-      data: {
-        label: node.label,
-        nodeType: node.type,
-        metadata: node.metadata,
-        selected: false,
-      },
-    }));
+    const rfNodes: Node<AnyNodeData>[] = filteredNodes.map((node) => {
+      const isCluster = node.id.startsWith(CLUSTER_PREFIX);
+      if (isCluster) {
+        return {
+          id: node.id,
+          type: "gdlCluster",
+          position: { x: 0, y: 0 },
+          data: {
+            label: node.label,
+            layer: node.type as GraphNodeType,
+            nodeType: node.type as GraphNodeType,
+            entityCount: Number.parseInt(node.metadata.entityCount ?? "0", 10),
+            fileCount: Number.parseInt(node.metadata.fileCount ?? "0", 10),
+            selected: false,
+          } satisfies ClusterNodeData,
+        };
+      }
+      return {
+        id: node.id,
+        type: "gdlNode",
+        position: { x: 0, y: 0 },
+        data: {
+          label: node.label,
+          nodeType: node.type,
+          metadata: node.metadata,
+          selected: false,
+        } satisfies GdlNodeData,
+      };
+    });
 
-    const rfEdges: Edge[] = filteredEdges.map((edge, i) => ({
-      id: `e-${edge.source}-${edge.target}-${i}`,
-      source: edge.source,
-      target: edge.target,
-      label: HIDDEN_LABELS.has(edge.label ?? "") ? undefined : edge.label,
-      type: "default",
-      animated: false,
-      style: { stroke: BRAND.primary, strokeWidth: 1.5, strokeOpacity: 0.45 },
-      labelStyle: { fontSize: 8, fill: BRAND.neutralMuted, fontWeight: 500 },
-      labelBgStyle: { fill: "var(--background)", fillOpacity: 0.9 },
-      labelBgPadding: [3, 2] as [number, number],
-      labelBgBorderRadius: 3,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 10,
-        height: 10,
-        color: BRAND.primary,
-      },
-    }));
+    const rfEdges: Edge[] = filteredEdges.map((edge, i) => {
+      const isAggregate = edge.type === "cluster-aggregate";
+      const weight = edge.label ? Number.parseInt(edge.label, 10) : 1;
+      const isHeavy = isAggregate && Number.isFinite(weight) && weight > 1;
+      return {
+        id: `e-${edge.source}-${edge.target}-${i}`,
+        source: edge.source,
+        target: edge.target,
+        label: isAggregate
+          ? isHeavy
+            ? `${weight}×`
+            : undefined
+          : HIDDEN_LABELS.has(edge.label ?? "")
+            ? undefined
+            : edge.label,
+        type: "default",
+        animated: false,
+        style: {
+          stroke: BRAND.primary,
+          strokeWidth: isAggregate ? Math.min(4, 1 + Math.log2(weight + 1)) : 1.5,
+          strokeOpacity: isAggregate ? 0.55 : 0.45,
+        },
+        labelStyle: { fontSize: 8, fill: BRAND.neutralMuted, fontWeight: 500 },
+        labelBgStyle: { fill: "var(--background)", fillOpacity: 0.9 },
+        labelBgPadding: [3, 2] as [number, number],
+        labelBgBorderRadius: 3,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 10,
+          height: 10,
+          color: BRAND.primary,
+        },
+      };
+    });
 
     // Scale layout width with node count so the grid spreads wide
     const layoutWidth = Math.max(1800, rfNodes.length * 16);
@@ -186,7 +301,18 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
     edgesRef.current = rfEdges;
     setNodes(laidOutNodes);
     setEdges(rfEdges);
-  }, [graphData, debouncedSearch, activeFilters, setNodes, setEdges]);
+  }, [
+    graphData,
+    debouncedSearch,
+    activeFilters,
+    setNodes,
+    setEdges,
+    isClusteredView,
+    isRecentView,
+    clustered,
+    expandedClusters,
+    recentGraph,
+  ]);
 
   // Update selected state on nodes without re-running layout
   useEffect(() => {
@@ -198,8 +324,18 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
     );
   }, [selectedNodeId, setNodes]);
 
-  const onNodeClick: NodeMouseHandler<Node<GdlNodeData>> = useCallback(
+  const onNodeClick: NodeMouseHandler<Node<AnyNodeData>> = useCallback(
     (_event, node) => {
+      // Cluster click → expand/collapse, no detail panel
+      if (node.id.startsWith(CLUSTER_PREFIX)) {
+        setExpandedClusters((prev) => {
+          const next = new Set(prev);
+          if (next.has(node.id)) next.delete(node.id);
+          else next.add(node.id);
+          return next;
+        });
+        return;
+      }
       setSelectedNodeId((prev) => (prev === node.id ? null : node.id));
       // Bridge to explorer entity selection
       if (onEntitySelect && node.id.startsWith("entity:")) {
@@ -253,9 +389,23 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
   const handleNavigateToNode = useCallback(
     (nodeId: string) => {
       setSelectedNodeId(nodeId);
-      void fitView({ nodes: [{ id: nodeId }], duration: 400, padding: 0.5 });
+      // fitView({ nodes }) needs the target node mounted in the DOM, but
+      // onlyRenderVisibleElements unmounts off-screen nodes — silently no-op.
+      // Pan to the node's visual centre using its stored position + measured
+      // bounding box. measured is undefined for nodes that have never rendered
+      // (e.g. far off-screen): the half-extent terms collapse to 0 and we fall
+      // back to centring on the top-left, which still moves the viewport.
+      const target = nodes.find((n) => n.id === nodeId);
+      if (target) {
+        const halfW = (target.measured?.width ?? 0) / 2;
+        const halfH = (target.measured?.height ?? 0) / 2;
+        void setCenter(target.position.x + halfW, target.position.y + halfH, {
+          duration: 400,
+          zoom: 1,
+        });
+      }
     },
-    [fitView],
+    [nodes, setCenter],
   );
 
   const typeCounts = useMemo(() => {
@@ -383,11 +533,61 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground/35">
-            {nodes.length} nodes · {edges.length} edges
-          </span>
+          {/* Scaling toggle — only visible when the dataset is large enough to benefit */}
+          {datasetIsLarge && (
+            <div
+              className="flex items-center rounded-lg border border-border/30 p-0.5"
+              title={`Scaling controls activate at ${CLUSTER_THRESHOLD}+ entities`}
+            >
+              <button
+                type="button"
+                onClick={() => setClusterMode("recent")}
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-150",
+                  clusterMode === "recent"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                )}
+                title={`Show the ${RECENT_LIMIT} most-recently-touched entities`}
+              >
+                <Sparkles className="h-3 w-3" />
+                Recent
+              </button>
+              <button
+                type="button"
+                onClick={() => setClusterMode("auto")}
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-150",
+                  clusterMode === "auto"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                )}
+                title="Group by layer; click a cluster to expand"
+              >
+                <Boxes className="h-3 w-3" />
+                Clusters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setClusterMode("all");
+                  setExpandedClusters(new Set());
+                }}
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-150",
+                  clusterMode === "all"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                )}
+                title="Show every entity (may be slow)"
+              >
+                <Network className="h-3 w-3" />
+                All
+              </button>
+            </div>
+          )}
 
-          <div className="h-4 w-px bg-border/30" />
+          {datasetIsLarge && <div className="h-4 w-px bg-border/30" />}
 
           {/* Layout toggle */}
           <div className="flex items-center rounded-lg border border-border/30 p-0.5">
@@ -461,41 +661,67 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
         </div>
       </div>
 
-      {/* React Flow canvas */}
+      {/* React Flow canvas + resizable detail panel.
+          The key forces a clean re-mount when the detail panel toggles in/out,
+          so react-resizable-panels picks up the new defaultSize values
+          (defaultSize is initial-only, ignored on subsequent prop changes). */}
       <div className="flex flex-1 min-h-0">
-        <div className="flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.15 }}
-            minZoom={0.05}
-            maxZoom={2.5}
-            defaultEdgeOptions={{ type: "default" }}
-          >
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={24}
-              size={0.8}
-              color="var(--border)"
-              style={{ opacity: 0.25 }}
-            />
-          </ReactFlow>
-        </div>
+        <ResizablePanelGroup
+          key={selectedGdlNode ? "split" : "full"}
+          direction="horizontal"
+        >
+          <ResizablePanel defaultSize={selectedGdlNode ? 75 : 100} minSize={30}>
+            <div className="relative h-full">
+              {/* Node/edge count overlay */}
+              <div className="absolute bottom-2 left-2 z-10 rounded-md bg-background/80 px-2 py-1 text-[10px] text-muted-foreground/45 font-mono backdrop-blur-sm">
+                {nodes.length} nodes · {edges.length} edges
+                {isRecentView && graphData && (
+                  <span className="ml-2 text-primary/60">
+                    · {RECENT_LIMIT} most recent of {graphData.stats.entityCount} entities
+                  </span>
+                )}
+              </div>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
+                nodeTypes={nodeTypes}
+                fitView
+                fitViewOptions={{ padding: 0.15 }}
+                minZoom={0.05}
+                maxZoom={2.5}
+                defaultEdgeOptions={{ type: "default" }}
+                onlyRenderVisibleElements
+              >
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={24}
+                  size={0.8}
+                  color="var(--border)"
+                  style={{ opacity: 0.25 }}
+                />
+              </ReactFlow>
+            </div>
+          </ResizablePanel>
 
-        {selectedGdlNode && (
-          <NodeDetailPanel
-            node={selectedGdlNode}
-            connectedNodes={connectedNodes}
-            onClose={() => setSelectedNodeId(null)}
-            onNavigateToNode={handleNavigateToNode}
-          />
-        )}
+          {selectedGdlNode && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={25} minSize={15} maxSize={50}>
+                <NodeDetailPanel
+                  node={selectedGdlNode}
+                  connectedNodes={connectedNodes}
+                  onClose={() => setSelectedNodeId(null)}
+                  onNavigateToNode={handleNavigateToNode}
+                  onOpenInExplorer={onOpenInExplorer}
+                />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
       </div>
     </div>
   );
@@ -505,12 +731,13 @@ function KnowledgeGraphInner({ onEntitySelect }: KnowledgeGraphInnerProps) {
 
 interface KnowledgeGraphProps {
   onEntitySelect?: (entity: string) => void;
+  onOpenInExplorer?: (filePath: string, line?: number) => void;
 }
 
-export function KnowledgeGraph({ onEntitySelect }: KnowledgeGraphProps) {
+export function KnowledgeGraph({ onEntitySelect, onOpenInExplorer }: KnowledgeGraphProps) {
   return (
     <ReactFlowProvider>
-      <KnowledgeGraphInner onEntitySelect={onEntitySelect} />
+      <KnowledgeGraphInner onEntitySelect={onEntitySelect} onOpenInExplorer={onOpenInExplorer} />
     </ReactFlowProvider>
   );
 }

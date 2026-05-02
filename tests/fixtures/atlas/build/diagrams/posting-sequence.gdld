@@ -1,0 +1,19 @@
+# @VERSION spec:gdld v:0.1.0 generated:2026-04-05 source:arch-agent
+# Project Atlas — posting flow sequence (event → audit)
+
+@diagram|id:atlas-posting-seq|type:sequence|purpose:Happy-path posting from PaymentService event through to AuditEvent|created:2026-04-05T11:00:00Z
+
+@participant|id:PaymentService|label:PaymentService|kind:external
+@participant|id:KafkaIngest|label:Kafka|kind:queue
+@participant|id:PostingSvc|label:PostingService|kind:service
+@participant|id:LedgerSvc|label:LedgerService|kind:service
+@participant|id:JournalEntry|label:JournalEntry (Postgres)|kind:store
+@participant|id:AuditSvc|label:AuditService|kind:service
+
+@step|from:PaymentService|to:KafkaIngest|label:emit payment event|order:1
+@step|from:KafkaIngest|to:PostingSvc|label:consume event|order:2
+@step|from:PostingSvc|to:PostingSvc|label:validate (account, amount, source)|order:3
+@step|from:PostingSvc|to:LedgerSvc|label:Post(entry)|order:4
+@step|from:LedgerSvc|to:JournalEntry|label:INSERT entry|order:5
+@step|from:LedgerSvc|to:AuditSvc|label:emit audit event|order:6
+@step|from:AuditSvc|to:KafkaIngest|label:produce audit event|order:7
