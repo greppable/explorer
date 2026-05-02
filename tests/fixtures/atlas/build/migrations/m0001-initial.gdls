@@ -1,0 +1,24 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-03-24 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — migration 0001: initial schema (Mar 24)
+
+@D atlas_finance|Initial schema set for Atlas — produced by migration 0001
+
+@T GeneralLedger|Account master, first cut
+account_id|UUID|N|PK|Primary key
+account_code|VARCHAR(40)|N||Chart of accounts code
+account_name|VARCHAR(200)|N||Display name
+status|VARCHAR(20)|N||Lifecycle status
+parent_id|UUID|Y|FK|Parent account
+currency_iso|CHAR(3)|N||ISO 4217 code
+created_at|TIMESTAMPTZ|N||Row creation timestamp
+@E GeneralLedger.status|ACTIVE,INACTIVE
+
+@T JournalEntry|Journal entries, first cut
+entry_id|UUID|N|PK|Primary key
+posting_date|DATE|N||Effective accounting date
+account_id|UUID|N|FK|Account reference
+amount|NUMERIC(28,8)|N||Posted amount
+posted_at|TIMESTAMPTZ|N||Wall-clock when posted
+
+@R JournalEntry.account_id -> GeneralLedger.account_id|fk

@@ -1,0 +1,103 @@
+# @VERSION spec:gdlm v:0.1.0 generated:2026-04-30 source:agent
+# Project Atlas — Build phase memory stream (Weeks 7-12)
+
+@anchor|concept:posting-service|scope:posting,validation,kafka,consumer,idempotency
+@anchor|concept:ledger-service|scope:ledger,journal,fx,saga,reversal
+@anchor|concept:reconciliation|scope:recon,variance,gate,close,month-end
+
+# ── Week 7 (Mar 23-29): Build kickoff ─────────────────────────────────
+
+@memory|id:M-ATL-B001|agent:tech-lead|type:decision|subject:Atlas|detail:Build phase formally started; Stream A/B/C agents kicking off in parallel|tags:kickoff,build|anchor:ledger-modernization|confidence:high|ts:2026-03-23T09:00:00Z
+@memory|id:M-ATL-B002|agent:build-agent-1|type:observation|subject:LedgerSvc|detail:Scaffolded LedgerService Go module; Account and JournalEntry types ported from target schema|tags:scaffold,go|anchor:ledger-service|confidence:high|ts:2026-03-23T11:00:00Z
+@memory|id:M-ATL-B003|agent:build-agent-2|type:observation|subject:ReconSvc|detail:ReconciliationService scaffolded; period-driven runner skeleton in place|tags:scaffold,go|anchor:reconciliation|confidence:high|ts:2026-03-23T11:30:00Z
+@memory|id:M-ATL-B004|agent:build-agent-3|type:observation|subject:AuditSvc|detail:AuditService scaffolded; Kafka producer wired to schema registry|tags:scaffold,kafka|anchor:audit-controls|confidence:high|ts:2026-03-23T12:00:00Z
+
+@memory|id:M-ATL-B005|agent:build-agent-1|type:decision|subject:JournalEntry|detail:Using shopspring/decimal for amounts; matches NUMERIC(28,8) precision in target schema|tags:precision,decision|anchor:ledger-service|relates:supports~M-ATL-T012|confidence:high|ts:2026-03-24T10:00:00Z
+@memory|id:M-ATL-B006|agent:build-agent-1|type:decision|subject:JournalEntry|detail:Adopted google/uuid v1 for entry_id; sortable UUIDs (v7) postponed pending Postgres 16 support confirmation|tags:uuid,decision|anchor:ledger-service|confidence:high|ts:2026-03-24T11:00:00Z
+@memory|id:M-ATL-B007|agent:build-agent-2|type:observation|subject:ReconSvc|detail:VarianceCalc copes with zero-row periods; tested with synthetic data|tags:tests|anchor:reconciliation|confidence:high|ts:2026-03-24T15:00:00Z
+@memory|id:M-ATL-B008|agent:build-agent-3|type:error|subject:AuditSvc|detail:Audit emitter dropped events under backpressure; reproduced in load test|tags:bug,reliability|anchor:audit-controls|confidence:high|ts:2026-03-25T11:00:00Z
+@memory|id:M-ATL-B009|agent:build-agent-3|type:decision|subject:AuditSvc|detail:Switched to required-acks=all + retry on backpressure; load test passes 2x throughput target|tags:fix,kafka|anchor:audit-controls|relates:caused_by~M-ATL-B008|confidence:high|ts:2026-03-25T15:00:00Z
+
+@memory|id:M-ATL-B010|agent:build-agent-1|type:observation|subject:Poster|detail:First end-to-end posting works in dev: PaymentService event → PostingSvc → LedgerSvc.Post → JournalEntry|tags:milestone,e2e|anchor:posting-service|confidence:high|ts:2026-03-26T11:00:00Z
+@memory|id:M-ATL-B011|agent:build-agent-1|type:observation|subject:Poster|detail:E2E latency p50=120ms, p99=480ms in dev — well under target SLO of 1s p99|tags:performance,milestone|anchor:posting-service|confidence:high|ts:2026-03-26T11:30:00Z
+@memory|id:M-ATL-B012|agent:build-agent-3|type:observation|subject:AuditSvc|detail:Mirror service writes audit events to Postgres with 99.99% match against Kafka counts in 24hr soak|tags:reliability|anchor:audit-controls|confidence:high|ts:2026-03-27T14:00:00Z
+
+# ── Week 8 (Mar 30 - Apr 5): Building out validation and reversals ────
+
+@memory|id:M-ATL-B020|agent:build-agent-1|type:observation|subject:Validator|detail:Account-status check rejected first attempt because soft-deleted accounts weren't filtered out|tags:bug,validation|anchor:posting-service|confidence:high|ts:2026-03-30T10:00:00Z
+@memory|id:M-ATL-B021|agent:build-agent-1|type:decision|subject:Validator|detail:Validator now treats CLOSED and FROZEN as non-postable; INACTIVE accepts only with manual override flag|tags:validation,decision|anchor:posting-service|relates:caused_by~M-ATL-B020|confidence:high|ts:2026-03-30T11:00:00Z
+@memory|id:M-ATL-B022|agent:build-agent-1|type:observation|subject:IdempotencyStore|detail:Redis idempotency keys prevent double-posts on consumer rebalance; verified by injected duplicate events|tags:idempotency,tests|anchor:posting-service|confidence:high|ts:2026-03-30T16:00:00Z
+
+@memory|id:M-ATL-B023|agent:build-agent-1|type:error|subject:Reverser|detail:Reversal entry initially had null sourceEventId — broke audit lineage|tags:bug,audit|anchor:ledger-service|confidence:high|ts:2026-03-31T10:00:00Z
+@memory|id:M-ATL-B024|agent:build-agent-1|type:decision|subject:Reverser|detail:Reversal copies sourceEventId from original; relates pointer added on AuditEvent|tags:fix,audit|anchor:ledger-service|relates:caused_by~M-ATL-B023|confidence:high|ts:2026-03-31T11:00:00Z
+
+@memory|id:M-ATL-B025|agent:build-agent-2|type:observation|subject:Runner|detail:Reconciliation runner needs read-after-write guarantee; switched to repeatable-read isolation|tags:postgres,isolation|anchor:reconciliation|confidence:high|ts:2026-04-01T10:00:00Z
+@memory|id:M-ATL-B026|agent:build-agent-2|type:observation|subject:VarianceCalc|detail:Variance calc was off by 1 cent on test fixture due to floating conversion; switched intermediates to decimal|tags:precision,bug|anchor:reconciliation|confidence:high|ts:2026-04-01T13:00:00Z
+@memory|id:M-ATL-B027|agent:build-agent-2|type:decision|subject:Gate|detail:Gate threshold set to ±$0.01 default; configurable per period|tags:config,decision|anchor:reconciliation|confidence:high|ts:2026-04-01T15:00:00Z
+
+@memory|id:M-ATL-B028|agent:build-agent-3|type:observation|subject:Customer|detail:Salesforce CDC integration receiving events; first 10k synced successfully|tags:cdc,milestone|anchor:event-driven|confidence:high|ts:2026-04-02T11:00:00Z
+@memory|id:M-ATL-B029|agent:build-agent-3|type:error|subject:Customer|detail:Customer events occasionally arrive out-of-order; account status flapped in tests|tags:bug,ordering|anchor:event-driven|confidence:high|ts:2026-04-02T14:00:00Z
+@memory|id:M-ATL-B030|agent:build-agent-3|type:decision|subject:Customer|detail:Adopted last-writer-wins by Salesforce systemmodstamp; ignore older events than current state|tags:fix,decision|anchor:event-driven|relates:caused_by~M-ATL-B029|confidence:high|ts:2026-04-02T16:00:00Z
+
+@memory|id:M-ATL-B031|agent:build-agent-1|type:observation|subject:FxRevaluator|detail:FX rates loaded from Acme treasury feed; 24-hour cache acceptable per finance|tags:fx,cache|anchor:ledger-service|confidence:high|ts:2026-04-03T11:00:00Z
+@memory|id:M-ATL-B032|agent:build-agent-1|type:observation|subject:FxRevaluator|detail:FxRevaluator integrated into posting flow when amount is in non-base currency; verified for 7 currencies|tags:fx,milestone|anchor:ledger-service|confidence:high|ts:2026-04-03T15:00:00Z
+
+# ── Week 9 (Apr 6-12): Saga, audit hardening, dual-run prep ──────────
+
+@memory|id:M-ATL-B040|agent:build-agent-1|type:observation|subject:PostingSaga|detail:PostingSaga implemented with compensating actions; happy path validated|tags:saga,milestone|anchor:ledger-service|relates:supports~M-ATL-T061|confidence:high|ts:2026-04-06T11:00:00Z
+@memory|id:M-ATL-B041|agent:build-agent-1|type:error|subject:PostingSaga|detail:Compensation order incorrect — reversed audit before reversing journal entry, broke trail|tags:bug,saga|anchor:ledger-service|confidence:high|ts:2026-04-06T15:00:00Z
+@memory|id:M-ATL-B042|agent:build-agent-1|type:decision|subject:PostingSaga|detail:Saga compensation now reverses in strict reverse order; state machine made explicit in code|tags:fix,saga|anchor:ledger-service|relates:caused_by~M-ATL-B041|confidence:high|ts:2026-04-06T17:00:00Z
+
+@memory|id:M-ATL-B043|agent:build-agent-3|type:observation|subject:AuditEvent|detail:AuditEvent.actor is now mandatory at the type level; removed null-permitting branches in writers|tags:audit,quality|anchor:audit-controls|relates:supports~M-ATL-C011|confidence:high|ts:2026-04-07T11:00:00Z
+@memory|id:M-ATL-B044|agent:build-agent-3|type:observation|subject:AuditEvent|detail:Audit stream cardinality 4x what was estimated — schema reviewed, no leaks|tags:audit,observability|anchor:audit-controls|confidence:high|ts:2026-04-07T15:00:00Z
+
+@memory|id:M-ATL-B045|agent:build-agent-2|type:observation|subject:Orchestrator|detail:MonthEndCloseService orchestrator now runs end-to-end on synthetic month; close completes in 38 minutes vs legacy 9 days|tags:milestone,performance|anchor:reconciliation|confidence:high|ts:2026-04-08T11:00:00Z
+@memory|id:M-ATL-B046|agent:tech-lead|type:observation|subject:Atlas|detail:Demo of close orchestration to Stewart and Priya — strong positive signal; minor UX requests for gate explainability|tags:demo,stakeholder|anchor:stakeholder-voice|confidence:high|ts:2026-04-08T16:00:00Z
+@memory|id:M-ATL-B047|agent:tech-lead|type:decision|subject:Atlas|detail:Adding gate-status drill-down endpoint to API surface; deferred to next sprint|tags:scope,decision|anchor:reconciliation|relates:supports~M-ATL-B046|confidence:high|ts:2026-04-08T17:00:00Z
+
+@memory|id:M-ATL-B048|agent:build-agent-1|type:observation|subject:LegacyLedger|detail:Shadow-write proof-of-concept in dev: same payment event posts to both legacy and Atlas ledgers|tags:cutover,milestone|anchor:cutover-strategy|confidence:high|ts:2026-04-09T13:00:00Z
+@memory|id:M-ATL-B049|agent:build-agent-1|type:observation|subject:LegacyLedger|detail:Reconciliation between shadow writes shows 99.998% match — three discrepancies traced to rounding in legacy FX|tags:reconciliation,observation|anchor:cutover-strategy|confidence:high|ts:2026-04-09T16:00:00Z
+@memory|id:M-ATL-B050|agent:tech-lead|type:decision|subject:LegacyLedger|detail:Three FX discrepancies are within tolerance; documented in cutover playbook as expected|tags:cutover,decision|anchor:cutover-strategy|relates:caused_by~M-ATL-B049|confidence:high|ts:2026-04-09T17:00:00Z
+
+# ── Week 10 (Apr 13-19): Performance, integrations, soak tests ───────
+
+@memory|id:M-ATL-B060|agent:build-agent-1|type:observation|subject:Poster|detail:Posting throughput in dev: 1,400 entries/sec single instance; target was 800/sec|tags:performance,milestone|anchor:posting-service|confidence:high|ts:2026-04-13T11:00:00Z
+@memory|id:M-ATL-B061|agent:build-agent-1|type:error|subject:Poster|detail:Memory leak observed during 24hr soak — connection pool not releasing on consumer rebalance|tags:bug,memory|anchor:posting-service|confidence:high|ts:2026-04-14T09:00:00Z
+@memory|id:M-ATL-B062|agent:build-agent-1|type:decision|subject:Poster|detail:Connection pool now scoped to consumer session; soak passes 72hr clean|tags:fix,memory|anchor:posting-service|relates:caused_by~M-ATL-B061|confidence:high|ts:2026-04-14T16:00:00Z
+
+@memory|id:M-ATL-B063|agent:build-agent-3|type:observation|subject:SnowflakeDW|detail:Debezium → Snowflake landing zone live in dev; lag p95 = 38 seconds, well under 2hr SLA|tags:snowflake,milestone|anchor:snowflake-migration|relates:supports~M-ATL-D040|confidence:high|ts:2026-04-15T11:00:00Z
+@memory|id:M-ATL-B064|agent:build-agent-3|type:observation|subject:SnowflakeDW|detail:Snowflake schema mirroring works for all ledger tables; type mappings validated against Postgres|tags:snowflake,validation|anchor:snowflake-migration|confidence:high|ts:2026-04-15T14:00:00Z
+
+@memory|id:M-ATL-B065|agent:build-agent-2|type:observation|subject:CloseSvc|detail:CloseService gate logic now reads variance from ReconciliationRun — close blocked when gate fails|tags:close,milestone|anchor:reconciliation|confidence:high|ts:2026-04-16T11:00:00Z
+@memory|id:M-ATL-B066|agent:build-agent-2|type:error|subject:CloseSvc|detail:Close orchestrator hung indefinitely when one of 12 sub-steps failed silently|tags:bug,reliability|anchor:reconciliation|confidence:high|ts:2026-04-16T14:00:00Z
+@memory|id:M-ATL-B067|agent:build-agent-2|type:decision|subject:CloseSvc|detail:All sub-steps now wrapped with timeouts and explicit error propagation; circuit-breaker around external calls|tags:fix,reliability|anchor:reconciliation|relates:caused_by~M-ATL-B066|confidence:high|ts:2026-04-16T16:00:00Z
+
+@memory|id:M-ATL-B068|agent:build-agent-1|type:observation|subject:NewLedgerApi|detail:Atlas Finance API v2 surface complete; OpenAPI spec generated from handler annotations|tags:api,milestone|anchor:ledger-modernization|confidence:high|ts:2026-04-17T11:00:00Z
+@memory|id:M-ATL-B069|agent:build-agent-1|type:observation|subject:NewLedgerApi|detail:All 13 v2 endpoints respond; auth integration with Acme SSO confirmed|tags:api,auth|anchor:ledger-modernization|confidence:high|ts:2026-04-17T15:00:00Z
+
+@memory|id:M-ATL-B070|agent:tech-lead|type:observation|subject:Atlas|detail:Mid-build steering review: 9/12 build-stream milestones met; 1 ahead, 2 on track|tags:steering,review|anchor:stakeholder-voice|confidence:high|ts:2026-04-17T16:00:00Z
+
+# ── Week 11 (Apr 20-26): Hardening, dual-run kickoff, testing prep ──
+
+@memory|id:M-ATL-B080|agent:build-agent-3|type:observation|subject:AuditSvc|detail:Compliance review of audit pipeline — controls map cleanly to SOX 404 and IFRS 9 requirements|tags:compliance,review|anchor:audit-controls|relates:supports~M-ATL-D050|confidence:high|ts:2026-04-20T11:00:00Z
+@memory|id:M-ATL-B081|agent:build-agent-3|type:decision|subject:AuditSvc|detail:Compliance signed off on audit pipeline; documented evidence pack added to engagement repo|tags:compliance,gate|anchor:audit-controls|confidence:high|ts:2026-04-20T16:00:00Z
+
+@memory|id:M-ATL-B082|agent:build-agent-1|type:observation|subject:LegacyLedger|detail:Shadow-write enabled in staging — 7 days clean run with continuous reconciliation|tags:cutover,milestone|anchor:cutover-strategy|confidence:high|ts:2026-04-21T11:00:00Z
+@memory|id:M-ATL-B083|agent:build-agent-1|type:observation|subject:LegacyLedger|detail:Daily reconciliation match in staging stable at 99.998%; same FX-rounding tolerance as before|tags:cutover,reconciliation|anchor:cutover-strategy|relates:supports~M-ATL-B049|confidence:high|ts:2026-04-22T11:00:00Z
+
+@memory|id:M-ATL-B084|agent:build-agent-2|type:observation|subject:CloseSvc|detail:Synthetic month-end close on full prod-shaped data: 51 minutes; reconciliation gate passed first try|tags:performance,milestone|anchor:reconciliation|confidence:high|ts:2026-04-23T11:00:00Z
+
+@memory|id:M-ATL-B085|agent:tech-lead|type:decision|subject:Atlas|detail:Build phase exit criteria met; testing phase formally green-lit by steering committee|tags:gate,phase-complete|anchor:ledger-modernization|confidence:high|ts:2026-04-24T16:00:00Z
+@memory|id:M-ATL-B086|agent:tech-lead|type:decision|subject:Atlas|detail:Test agent (qa-agent) joining engagement Mon Apr 27; build agents continue defect work in parallel|tags:planning,testing|anchor:ledger-modernization|confidence:high|ts:2026-04-24T17:00:00Z
+
+@memory|id:M-ATL-B087|agent:build-agent-1|type:observation|subject:Poster|detail:Final hardening pass on Poster: graceful shutdown + drain on SIGTERM verified|tags:reliability,polish|anchor:posting-service|confidence:high|ts:2026-04-26T13:00:00Z
+@memory|id:M-ATL-B088|agent:build-agent-3|type:observation|subject:AuditSvc|detail:AuditSvc operational dashboards published to Grafana; oncall runbook drafted|tags:ops,docs|anchor:audit-controls|confidence:high|ts:2026-04-26T15:00:00Z
+
+# ── Week 12 (Apr 27 - May 1): Build wrap-up + testing kickoff ────────
+
+@memory|id:M-ATL-B090|agent:build-agent-2|type:observation|subject:Atlas|detail:Build agents handing over modules to qa-agent with test plans and known limitations|tags:handover,docs|anchor:ledger-modernization|confidence:high|ts:2026-04-27T10:00:00Z
+@memory|id:M-ATL-B091|agent:build-agent-1|type:observation|subject:Atlas|detail:Open defect count at handover: 14 minor, 0 major, 0 critical|tags:quality,handover|anchor:ledger-modernization|confidence:high|ts:2026-04-27T11:00:00Z
+@memory|id:M-ATL-B092|agent:tech-lead|type:decision|subject:Atlas|detail:Build phase formally closed; testing phase active; cutover prep continues in parallel|tags:gate,phase-complete|anchor:ledger-modernization|confidence:high|ts:2026-04-27T16:00:00Z
+
+@memory|id:M-ATL-B093|agent:build-agent-1|type:observation|subject:Poster|detail:Last build-stream-A change merged: improved error messages on validation failures|tags:polish|anchor:posting-service|confidence:high|ts:2026-04-29T11:00:00Z
+@memory|id:M-ATL-B094|agent:build-agent-3|type:observation|subject:AuditSvc|detail:Onboarded second oncall engineer to AuditSvc runbook|tags:ops|anchor:audit-controls|confidence:high|ts:2026-04-30T10:00:00Z

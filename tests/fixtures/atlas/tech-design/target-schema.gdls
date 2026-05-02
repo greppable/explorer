@@ -1,0 +1,80 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-03-22 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — target ledger schema (to-be)
+
+@D atlas_finance|Atlas modernised ledger schema (Postgres 16) — produced by tech-design phase
+
+@T GeneralLedger|Account master — modernised, with explicit currency and lifecycle handling
+account_id|UUID|N|PK|Primary key
+account_code|VARCHAR(40)|N||Chart of accounts code (unique)
+account_name|VARCHAR(200)|N||Display name
+status|VARCHAR(20)|N||Lifecycle status
+parent_id|UUID|Y|FK|Parent account
+currency_iso|CHAR(3)|N||ISO 4217 code
+opened_at|TIMESTAMPTZ|N||When the account was opened
+closed_at|TIMESTAMPTZ|Y||If closed, when
+created_at|TIMESTAMPTZ|N||Row creation timestamp
+updated_at|TIMESTAMPTZ|N||Last mutation timestamp
+@E GeneralLedger.status|ACTIVE,INACTIVE,CLOSED,FROZEN|Account lifecycle status
+
+@T JournalEntry|Journal entries — versioned and immutably linked to source events
+entry_id|UUID|N|PK|Primary key
+posting_date|DATE|N||Effective accounting date
+account_id|UUID|N|FK|Account reference
+amount|NUMERIC(28,8)|N||Posted amount in account currency
+amount_base|NUMERIC(28,8)|Y||Base-currency translation snapshot
+fx_rate|NUMERIC(18,8)|Y||FX rate snapshot
+source_kind|VARCHAR(30)|N||Origin classification
+source_event_id|UUID|Y||Upstream event identifier (Kafka offset)
+posted_by|VARCHAR(120)|N||Service or user identity
+posted_at|TIMESTAMPTZ|N||Wall-clock when posted
+reverses_entry_id|UUID|Y|FK|Reversed entry, if applicable
+batch_id|UUID|Y|FK|Batch identifier
+version|INTEGER|N||Increments on supersession
+@E JournalEntry.source_kind|MANUAL,PAYMENT,CDC,FX_REVAL,RECON_ADJUSTMENT,IMPORT|Provenance of the entry
+
+@T PaymentBatch|Payment batches — preserved for traceability even though entries arrive via Kafka
+batch_id|UUID|N|PK|Primary key
+upstream_topic|VARCHAR(120)|N||Kafka topic that fed the batch
+window_start|TIMESTAMPTZ|N||Earliest event in the batch
+window_end|TIMESTAMPTZ|N||Latest event in the batch
+entry_count|INTEGER|N||Entries posted from batch
+status|VARCHAR(20)|N||Processing state
+@E PaymentBatch.status|RECEIVED,PROCESSED,RECONCILED,FAILED
+
+@T Customer|Customer master — sourced from Salesforce CDC
+customer_id|UUID|N|PK|Internal identifier
+sf_external_id|VARCHAR(64)|N||Salesforce ID (unique)
+display_name|VARCHAR(200)|N||Display name
+tier|VARCHAR(20)|Y||Customer tier
+region|VARCHAR(40)|Y||Operational region
+synced_at|TIMESTAMPTZ|N||Last CDC sync
+@E Customer.tier|STRATEGIC,ENTERPRISE,MID,SMB
+
+@T ReconciliationRun|Per-period reconciliation run — strict, gating month-end close
+run_id|UUID|N|PK|Primary key
+period|VARCHAR(7)|N||YYYY-MM
+started_at|TIMESTAMPTZ|N||Start
+completed_at|TIMESTAMPTZ|Y||Completion
+status|VARCHAR(20)|N||Outcome
+variance_total|NUMERIC(28,8)|Y||Variance summed across runs
+gate_passed|BOOLEAN|Y||Whether close was allowed to proceed
+@E ReconciliationRun.status|RUNNING,SUCCESS,VARIANCE,FAILED
+
+@T AuditEvent|Append-only audit events mirrored from Kafka
+audit_id|UUID|N|PK|Primary key
+event_ts|TIMESTAMPTZ|N||Event timestamp
+actor|VARCHAR(120)|N||Acting principal (mandatory now)
+entity|VARCHAR(40)|N||Entity affected
+entity_id|UUID|N||Entity identifier
+operation|VARCHAR(20)|N||Operation
+prior_version|INTEGER|Y||Previous version
+new_version|INTEGER|Y||Resulting version
+@E AuditEvent.operation|INSERT,UPDATE,SUPERSEDE,REVERSE,CLOSE,GATE
+
+@R JournalEntry.account_id -> GeneralLedger.account_id|fk|Journal entry to account
+@R JournalEntry.reverses_entry_id -> JournalEntry.entry_id|fk|Reversal linkage
+@R JournalEntry.batch_id -> PaymentBatch.batch_id|fk|Batch traceability
+@R GeneralLedger.parent_id -> GeneralLedger.account_id|fk|Account hierarchy
+@R AuditEvent.entity_id -> JournalEntry.entry_id|polymorphic|Audit reference (polymorphic)
+@R PaymentBatch.batch_id -> ReconciliationRun.run_id|reconciles|Batch reconciliation

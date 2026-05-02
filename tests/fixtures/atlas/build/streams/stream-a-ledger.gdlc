@@ -1,0 +1,15 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-03-28 source:build-agent-1
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — Stream A (LedgerSvc + PostingSvc) initial structure
+
+@D atlas/internal/ledger|Stream A — core ledger domain (build-agent-1)
+
+@F atlas/internal/ledger/account.go|go|Account,AccountRepo|github.com/google/uuid|Account model and repository contract
+@F atlas/internal/ledger/journal.go|go|JournalEntry,JournalRepo|github.com/google/uuid,github.com/shopspring/decimal|JournalEntry model and repository contract
+@F atlas/internal/ledger/poster.go|go|Poster,PostingError|atlas/internal/ledger/account,atlas/internal/ledger/journal|Posts validated journal entries
+@F atlas/internal/ledger/reverser.go|go|Reverser|atlas/internal/ledger/poster|Posts compensating reversal entries
+
+@D atlas/internal/posting|Stream A — event consumption
+
+@F atlas/internal/posting/consumer.go|go|Consumer|atlas/internal/kafka|Consumes payment events
+@F atlas/internal/posting/validator.go|go|Validator,ValidationError|atlas/internal/ledger/journal|Validates events against business rules

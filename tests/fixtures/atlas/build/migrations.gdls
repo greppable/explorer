@@ -1,0 +1,56 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-04-18 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — schema as it stands after build migrations 001-014
+
+@D atlas_finance|Atlas modernised ledger schema (Postgres 16) — post-build migration set
+
+@T GeneralLedger|Account master — added closed_at index in migration 008
+account_id|UUID|N|PK|Primary key
+account_code|VARCHAR(40)|N||Chart of accounts code
+account_name|VARCHAR(200)|N||Display name
+status|VARCHAR(20)|N||Lifecycle status
+parent_id|UUID|Y|FK|Parent account
+currency_iso|CHAR(3)|N||ISO 4217 code
+opened_at|TIMESTAMPTZ|N||When the account was opened
+closed_at|TIMESTAMPTZ|Y||If closed, when (added migration 008)
+created_at|TIMESTAMPTZ|N||Row creation timestamp
+updated_at|TIMESTAMPTZ|N||Last mutation timestamp
+@E GeneralLedger.status|ACTIVE,INACTIVE,CLOSED,FROZEN
+
+@T JournalEntry|Journal entries — version + supersession + new validation_ok column from migration 011
+entry_id|UUID|N|PK|Primary key
+posting_date|DATE|N||Effective accounting date
+account_id|UUID|N|FK|Account reference
+amount|NUMERIC(28,8)|N||Posted amount
+amount_base|NUMERIC(28,8)|Y||Base-currency translation
+fx_rate|NUMERIC(18,8)|Y||FX rate snapshot
+source_kind|VARCHAR(30)|N||Origin classification
+source_event_id|UUID|Y||Upstream event identifier
+posted_by|VARCHAR(120)|N||Service or user identity
+posted_at|TIMESTAMPTZ|N||Wall-clock timestamp
+reverses_entry_id|UUID|Y|FK|Reversed entry
+batch_id|UUID|Y|FK|Batch identifier
+version|INTEGER|N||Increments on supersession
+validation_ok|BOOLEAN|N||Set true after Validator runs (added migration 011)
+@E JournalEntry.source_kind|MANUAL,PAYMENT,CDC,FX_REVAL,RECON_ADJUSTMENT,IMPORT
+
+@T MigrationLog|Tracks applied migrations — added migration 001
+migration_id|VARCHAR(40)|N|PK|Migration identifier (e.g. 0001_init)
+applied_at|TIMESTAMPTZ|N||When the migration was applied
+checksum|VARCHAR(64)|N||SHA-256 of the migration script
+
+@T IdempotencyKey|Idempotency keys for posting consumers — added migration 005
+key|VARCHAR(120)|N|PK|Idempotency key (typically Kafka topic + offset)
+seen_at|TIMESTAMPTZ|N||When the event was first observed
+entry_id|UUID|Y|FK|Resulting journal entry, if posted
+
+@T ReconciliationGate|Per-period gate state — added migration 013
+period|VARCHAR(7)|N|PK|YYYY-MM
+threshold|NUMERIC(28,8)|N||Variance threshold (default 0.01)
+gate_status|VARCHAR(20)|N||Current gate status
+last_evaluated_at|TIMESTAMPTZ|N||Last evaluation timestamp
+@E ReconciliationGate.gate_status|OPEN,CLOSED,GATED,WAIVED
+
+@R JournalEntry.account_id -> GeneralLedger.account_id|fk
+@R JournalEntry.reverses_entry_id -> JournalEntry.entry_id|fk|Reversal linkage
+@R IdempotencyKey.entry_id -> JournalEntry.entry_id|fk|Idempotency-to-entry traceability

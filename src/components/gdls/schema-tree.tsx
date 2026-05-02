@@ -48,7 +48,8 @@ export function SchemaTree({
                   <button
                     key={table.name}
                     onClick={() => onTableSelect(table.name)}
-                    className={`w-full text-left px-2.5 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 ${
+                    title={table.name}
+                    className={`w-full text-left px-2.5 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 break-all ${
                       selectedTable === table.name
                         ? "bg-primary/10 text-primary ring-1 ring-primary/20"
                         : "text-foreground/70 hover:bg-muted/50"

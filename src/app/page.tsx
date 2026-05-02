@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { FolderTree } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { FileTreeSidebar } from "@/components/file-tree";
 import { RawViewer } from "@/components/raw-viewer";
 import { GdldViewer } from "@/components/gdld/gdld-viewer";
@@ -21,6 +23,7 @@ import {
 } from "@/components/ui/resizable";
 import type { FileEntry } from "@/lib/types";
 import { KnowledgeGraph } from "@/components/graph/knowledge-graph";
+import { ProjectTimeline } from "@/components/timeline/project-timeline";
 
 function FileViewer({
   file,
@@ -67,8 +70,32 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"explorer" | "graph">("explorer");
+  const [viewMode, setViewMode] = useState<"explorer" | "graph" | "timeline">("explorer");
+  const [showPaths, setShowPaths] = useState(false);
   const handleProjectName = useCallback((name: string) => setProjectName(name), []);
+
+  const handleOpenInExplorer = useCallback(
+    async (filePath: string, line?: number) => {
+      // line is accepted so callers (timeline detail, graph node detail) can
+      // pass through a source line without it being silently dropped. File
+      // viewers don't yet support scroll-to-line; void-discard keeps the
+      // contract honest until they do.
+      void line;
+      try {
+        const res = await fetch("/api/files");
+        if (!res.ok) return;
+        const data = (await res.json()) as { files: FileEntry[] };
+        const file = data.files?.find((f) => f.path === filePath);
+        if (file) {
+          setSelectedFile(file);
+          setViewMode("explorer");
+        }
+      } catch {
+        // Best-effort navigation; silently ignore lookup failures
+      }
+    },
+    [],
+  );
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -100,6 +127,16 @@ export default function Home() {
             >
               Graph
             </button>
+            <button
+              onClick={() => setViewMode("timeline")}
+              className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                viewMode === "timeline"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              Timeline
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -116,26 +153,54 @@ export default function Home() {
       <div className="flex-1 min-h-0 hidden sm:flex">
         {viewMode === "graph" ? (
           <div className="flex-1 min-w-0">
-            <KnowledgeGraph onEntitySelect={setSelectedEntity} />
+            <KnowledgeGraph
+              onEntitySelect={setSelectedEntity}
+              onOpenInExplorer={handleOpenInExplorer}
+            />
+          </div>
+        ) : viewMode === "timeline" ? (
+          <div className="flex-1 min-w-0">
+            <ProjectTimeline
+              onEntitySelect={setSelectedEntity}
+              onOpenInExplorer={handleOpenInExplorer}
+            />
           </div>
         ) : (
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup
+            key={selectedEntity ? "split" : "full"}
+            direction="horizontal"
+          >
             <ResizablePanel defaultSize={20} minSize={12} maxSize={40}>
               <div className="h-full flex flex-col bg-card/30">
-                <div className="px-3 py-2.5 border-b border-border/50">
-                  <p className="text-[10px] text-muted-foreground/60 font-mono">{projectName}</p>
+                <div className="px-3 py-1.5 border-b border-border/50 flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground/60 font-mono truncate">{projectName}</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowPaths((v) => !v)}
+                    className={cn(
+                      "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono transition-colors",
+                      showPaths
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground/45 hover:text-foreground hover:bg-muted/40",
+                    )}
+                    title={showPaths ? "Hide folder paths" : "Show folder paths"}
+                  >
+                    <FolderTree className="h-3 w-3" />
+                    paths
+                  </button>
                 </div>
                 <div className="flex-1 min-h-0">
                   <FileTreeSidebar
                     onFileSelect={setSelectedFile}
                     selectedFile={selectedFile}
                     onProjectName={handleProjectName}
+                    showPaths={showPaths}
                   />
                 </div>
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={80}>
+            <ResizablePanel defaultSize={selectedEntity ? 60 : 80} minSize={30}>
               <div className="h-full flex flex-col min-w-0 bg-background">
                 {selectedFile ? (
                   <>
@@ -151,18 +216,19 @@ export default function Home() {
                 )}
               </div>
             </ResizablePanel>
+            {selectedEntity && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={20} minSize={14} maxSize={40}>
+                  <CrossLayerPanel
+                    entity={selectedEntity}
+                    onFileSelect={(file) => setSelectedFile(file)}
+                    onClose={() => setSelectedEntity(null)}
+                  />
+                </ResizablePanel>
+              </>
+            )}
           </ResizablePanelGroup>
-        )}
-
-        {/* Cross-layer panel (hidden in graph mode — graph has its own detail panel) */}
-        {viewMode === "explorer" && selectedEntity && (
-          <div className="w-72 border-l border-border/50 flex-shrink-0">
-            <CrossLayerPanel
-              entity={selectedEntity}
-              onFileSelect={(file) => setSelectedFile(file)}
-              onClose={() => setSelectedEntity(null)}
-            />
-          </div>
         )}
       </div>
 

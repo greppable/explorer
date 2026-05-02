@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import cytoscape from "cytoscape";
 import type { GdldModel } from "@/lib/parsers/gdld-parser";
 import { SHAPE_MAP, buildCytoscapeStyles } from "./cytoscape-styles";
@@ -123,6 +123,8 @@ export function FlowchartViewer({ model, onNodeSelect }: FlowchartViewerProps) {
   const { gotchas, recovery, decisions, useWhen, useNot } = model.context;
   const hasAnnotations = gotchas.length > 0 || recovery.length > 0 || decisions.length > 0;
   const hasScenarios = useWhen.length > 0 || useNot.length > 0;
+  const [annotationsOpen, setAnnotationsOpen] = useState(false);
+  const annotationCount = gotchas.length + recovery.length + decisions.length;
 
   return (
     <div className="h-full flex flex-col">
@@ -139,29 +141,41 @@ export function FlowchartViewer({ model, onNodeSelect }: FlowchartViewerProps) {
       {/* Cytoscape canvas */}
       <div ref={containerRef} className="flex-1 min-h-0" />
 
-      {/* Annotation cards */}
+      {/* Annotation toggle + collapsible cards */}
       {hasAnnotations && (
         <div className="px-6 pb-3 pt-2">
-          <div className="flex flex-wrap gap-3">
-            {gotchas.map((g, i) => (
-              <div key={`g-${i}`} className="rounded-lg border border-dashed border-red-200/60 bg-red-50/30 px-3 py-2 max-w-xs">
-                <p className="text-[10px] font-mono font-medium text-red-400/70">&#9651; @gotcha</p>
-                <p className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">{g.issue}{g.detail ? ` — ${g.detail}` : ""}</p>
-              </div>
-            ))}
-            {recovery.map((r, i) => (
-              <div key={`r-${i}`} className="rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-2 max-w-xs">
-                <p className="text-[10px] font-mono font-medium text-muted-foreground/50">&#9881; @recovery</p>
-                <p className="text-[10px] font-mono text-muted-foreground/40 mt-0.5">{r.issue}{r.means ? ` — ${r.means}` : ""}</p>
-              </div>
-            ))}
-            {decisions.map((d, i) => (
-              <div key={`d-${i}`} className="rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-2 max-w-xs">
-                <p className="text-[10px] font-mono font-medium text-muted-foreground/50">&#9872; @decision</p>
-                <p className="text-[10px] font-mono text-muted-foreground/40 mt-0.5">{d.title}{d.reason ? ` — ${d.reason}` : ""}</p>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={() => setAnnotationsOpen(!annotationsOpen)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/30 px-3 py-1 text-[10px] font-mono text-muted-foreground/60 hover:bg-muted/50 transition-colors"
+          >
+            <span className={`transition-transform ${annotationsOpen ? "rotate-90" : ""}`}>&#9654;</span>
+            {gotchas.length > 0 && <span className="text-red-400/70">&#9651; {gotchas.length} gotcha{gotchas.length !== 1 ? "s" : ""}</span>}
+            {recovery.length > 0 && <span>&#9881; {recovery.length}</span>}
+            {decisions.length > 0 && <span>&#9872; {decisions.length}</span>}
+            <span>{annotationCount} annotation{annotationCount !== 1 ? "s" : ""}</span>
+          </button>
+          {annotationsOpen && (
+            <div className="flex flex-wrap gap-3 mt-2">
+              {gotchas.map((g, i) => (
+                <div key={`g-${i}`} className="rounded-lg border border-dashed border-red-200/60 bg-red-50/30 px-3 py-2 max-w-xs">
+                  <p className="text-[10px] font-mono font-medium text-red-400/70">&#9651; @gotcha</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">{g.issue}{g.detail ? ` — ${g.detail}` : ""}</p>
+                </div>
+              ))}
+              {recovery.map((r, i) => (
+                <div key={`r-${i}`} className="rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-2 max-w-xs">
+                  <p className="text-[10px] font-mono font-medium text-muted-foreground/50">&#9881; @recovery</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/40 mt-0.5">{r.issue}{r.means ? ` — ${r.means}` : ""}</p>
+                </div>
+              ))}
+              {decisions.map((d, i) => (
+                <div key={`d-${i}`} className="rounded-lg border border-dashed border-border/40 bg-muted/20 px-3 py-2 max-w-xs">
+                  <p className="text-[10px] font-mono font-medium text-muted-foreground/50">&#9872; @decision</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/40 mt-0.5">{d.title}{d.reason ? ` — ${d.reason}` : ""}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

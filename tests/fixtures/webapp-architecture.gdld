@@ -1,0 +1,160 @@
+# ShipFast — Full-Stack Web Application Architecture
+@diagram|id:shipfast-webapp|type:flow|purpose:Production architecture for a Next.js e-commerce platform|direction:TD
+
+# ── Client tier ────────────────────────────────────────────
+@group|id:client|label:Client Tier
+
+@node|id:NextFE|label:Next.js App (SSR + RSC)|group:client
+@node|id:ServiceWorker|label:Service Worker|shape:hexagon|group:client
+@node|id:LocalState|label:Zustand Store|shape:diamond|group:client
+@node|id:ReactQuery|label:TanStack Query Cache|shape:diamond|group:client
+
+@edge|from:NextFE|to:ServiceWorker|label:registers
+@edge|from:NextFE|to:LocalState|label:client state
+@edge|from:NextFE|to:ReactQuery|label:server state
+
+# ── CDN & edge ─────────────────────────────────────────────
+@group|id:edge|label:Edge Layer
+
+@node|id:Vercel|label:Vercel Edge Network|group:edge
+@node|id:EdgeMiddleware|label:Edge Middleware|shape:diamond|group:edge
+@node|id:ImageOpt|label:Image Optimization (CDN)|group:edge
+
+@edge|from:NextFE|to:Vercel|label:deployed to
+@edge|from:Vercel|to:EdgeMiddleware|label:intercepts requests
+@edge|from:Vercel|to:ImageOpt|label:optimizes images
+@edge|from:ServiceWorker|to:Vercel|label:precaches assets
+
+# ── API layer ──────────────────────────────────────────────
+@group|id:api|label:API Layer
+
+@node|id:NextAPI|label:Next.js API Routes|group:api
+@node|id:tRPC|label:tRPC Router|group:api
+@node|id:AuthMiddleware|label:Auth Middleware (NextAuth)|shape:diamond|group:api
+@node|id:RateLimit|label:Upstash Rate Limiter|shape:diamond|group:api
+@node|id:Webhook|label:Webhook Handler|group:api
+
+@edge|from:EdgeMiddleware|to:NextAPI|label:forwards
+@edge|from:NextAPI|to:tRPC|label:delegates
+@edge|from:NextAPI|to:AuthMiddleware|label:validates session
+@edge|from:NextAPI|to:RateLimit|label:checks quota
+@edge|from:ReactQuery|to:tRPC|label:typed RPC calls
+@edge|from:Webhook|to:NextAPI|label:Stripe / Shippo events
+
+# ── Domain services ────────────────────────────────────────
+@group|id:domain|label:Domain Services
+
+@node|id:CatalogSvc|label:Catalog Service|group:domain
+@node|id:CartSvc|label:Cart Service|group:domain
+@node|id:OrderSvc|label:Order Service|group:domain
+@node|id:PaymentSvc|label:Payment Service|group:domain
+@node|id:InventorySvc|label:Inventory Service|group:domain
+@node|id:ShippingSvc|label:Shipping Service|group:domain
+@node|id:ReviewSvc|label:Review Service|group:domain
+
+@edge|from:tRPC|to:CatalogSvc|label:product queries
+@edge|from:tRPC|to:CartSvc|label:cart mutations
+@edge|from:tRPC|to:OrderSvc|label:checkout flow
+@edge|from:tRPC|to:ReviewSvc|label:product reviews
+@edge|from:OrderSvc|to:PaymentSvc|label:charges
+@edge|from:OrderSvc|to:InventorySvc|label:reserves stock
+@edge|from:OrderSvc|to:ShippingSvc|label:creates shipment
+@edge|from:PaymentSvc|to:Webhook|label:payment confirmation|style:dashed
+
+# ── External integrations ─────────────────────────────────
+@group|id:external|label:External Services
+
+@node|id:Stripe|label:Stripe Payments|shape:hexagon|group:external
+@node|id:Shippo|label:Shippo Shipping|shape:hexagon|group:external
+@node|id:Algolia|label:Algolia Search|shape:hexagon|group:external
+@node|id:Resend|label:Resend Email|shape:hexagon|group:external
+@node|id:Sentry|label:Sentry Error Tracking|shape:hexagon|group:external
+
+@edge|from:PaymentSvc|to:Stripe|label:charges + refunds
+@edge|from:ShippingSvc|to:Shippo|label:rate quotes + labels
+@edge|from:CatalogSvc|to:Algolia|label:syncs product index
+@edge|from:OrderSvc|to:Resend|label:transactional emails
+@edge|from:NextFE|to:Sentry|label:client errors
+@edge|from:NextAPI|to:Sentry|label:server errors
+
+# ── Data layer ─────────────────────────────────────────────
+@group|id:data|label:Data Layer
+
+@node|id:PlanetScale|label:PlanetScale MySQL|shape:database|group:data
+@node|id:Prisma|label:Prisma ORM|group:data
+@node|id:RedisCache|label:Upstash Redis|shape:database|group:data
+@node|id:S3Assets|label:S3 Product Images|shape:database|group:data
+@node|id:Drizzle|label:Drizzle (read replicas)|group:data
+
+@edge|from:Prisma|to:PlanetScale|label:writes (primary)
+@edge|from:Drizzle|to:PlanetScale|label:reads (replica)
+@edge|from:CatalogSvc|to:Prisma|label:product CRUD
+@edge|from:CartSvc|to:RedisCache|label:session carts
+@edge|from:OrderSvc|to:Prisma|label:order writes
+@edge|from:InventorySvc|to:Prisma|label:stock levels
+@edge|from:CatalogSvc|to:S3Assets|label:image uploads
+@edge|from:CatalogSvc|to:Drizzle|label:catalog reads
+
+# ── Background jobs ────────────────────────────────────────
+@group|id:background|label:Background Jobs
+
+@node|id:Inngest|label:Inngest Functions|group:background
+@node|id:CronSync|label:Inventory Sync (cron)|shape:diamond|group:background
+@node|id:EmailQueue|label:Email Queue|group:background
+
+@edge|from:OrderSvc|to:Inngest|label:order.placed event
+@edge|from:Inngest|to:EmailQueue|label:sends confirmation
+@edge|from:EmailQueue|to:Resend|label:delivers
+@edge|from:CronSync|to:InventorySvc|label:reconciles stock|style:dashed
+@edge|from:Inngest|to:ShippingSvc|label:delayed shipment check
+
+# ── Observability ──────────────────────────────────────────
+@group|id:observability|label:Observability
+
+@node|id:VercelAnalytics|label:Vercel Analytics|group:observability
+@node|id:Axiom|label:Axiom Logs|group:observability
+@node|id:Checkly|label:Checkly Synthetic Monitors|group:observability
+
+@edge|from:Vercel|to:VercelAnalytics|label:web vitals + traffic
+@edge|from:NextAPI|to:Axiom|label:structured logs
+@edge|from:Checkly|to:Vercel|label:health probes|style:dashed
+
+# ── Views ──────────────────────────────────────────────────
+@view|id:frontend|includes:client,edge|label:Frontend Architecture
+@view|id:backend|includes:api,domain,data,background|label:Backend Architecture
+@view|id:checkout-flow|filter:tags:core|label:Checkout Critical Path
+@view|id:external-deps|includes:external|label:Third-Party Dependencies
+
+# ── Scenarios ──────────────────────────────────────────────
+@scenario|id:base
+@scenario|id:self-hosted|inherits:base|label:Self-Hosted Variant
+@override|scenario:self-hosted|target:Vercel|field:label|value:Docker + Nginx
+@override|scenario:self-hosted|target:PlanetScale|field:label|value:MySQL 8 (self-managed)
+@override|scenario:self-hosted|target:RedisCache|field:label|value:Redis 7 (self-managed)
+
+# ── Gotchas & decisions ────────────────────────────────────
+@gotcha|issue:tRPC bundle size|detail:Importing the full router on the client pulls all zod schemas into the JS bundle; adds ~45 KB gzipped|fix:Use tRPC lazy router splitting; only import procedure types client-side
+@gotcha|issue:PlanetScale connection limits|detail:Serverless functions open a new DB connection per invocation; hits 1000 connection limit under load|fix:Use Prisma Data Proxy or PlanetScale serverless driver (@planetscale/database) with HTTP-based connections
+@gotcha|issue:Stale cart in Redis|detail:Redis cart TTL is 7 days; if user returns after expiry, checkout crashes with empty cart and no error message|fix:Cart middleware checks existence before mutations; show recovery UI that re-adds items from order history
+@gotcha|issue:Webhook replay storms|detail:Stripe retries failed webhooks exponentially; if handler is down for 2 h, replay storm can cause duplicate order processing|fix:Idempotency key check on order creation; dedup table in PlanetScale with 24 h TTL
+
+@decision|id:ADR-040|title:Next.js App Router over Pages Router|status:accepted|reason:React Server Components reduce client JS by 40%; streaming SSR improves TTFB
+@decision|id:ADR-041|title:tRPC over REST|status:accepted|reason:End-to-end type safety eliminates a class of integration bugs; inference removes need for codegen
+@decision|id:ADR-042|title:Inngest over BullMQ|status:accepted|reason:Serverless-native; no Redis queue to manage; built-in retry, throttle, and step functions
+@decision|id:ADR-043|title:PlanetScale over Supabase|status:accepted|reason:Non-blocking schema migrations (no table locks); better branching workflow for CI
+
+@component|name:Next.js App|file:apps/web/|does:SSR storefront, API routes, tRPC server, edge middleware
+@component|name:Prisma Schema|file:packages/db/prisma/schema.prisma|does:Canonical data model — products, orders, users, inventory
+@component|name:tRPC Router|file:packages/api/src/router/|does:Type-safe API layer; procedures grouped by domain (catalog, cart, order)
+@component|name:Inngest Functions|file:packages/jobs/src/functions/|does:Async workflows — order confirmation, shipment tracking, inventory reconciliation
+
+@config|param:NEXT_PUBLIC_STRIPE_KEY|value:pk_live_***|note:Publishable key; safe for client bundle
+@config|param:RATE_LIMIT_MAX|value:100|note:100 requests per 10s window per IP
+@config|param:CART_TTL_SECONDS|value:604800|note:7-day cart expiry in Redis
+@config|param:IMAGE_QUALITY|value:75|note:Vercel image optimization quality; balances size vs. fidelity
+
+@entry|use-case:Browse and purchase|command:Browser -> Vercel -> SSR catalog page -> Add to cart (Redis) -> Checkout (tRPC) -> Stripe -> Order confirmation (Inngest -> Resend)
+@entry|use-case:Admin product upload|command:Admin UI -> tRPC mutation -> Prisma write -> S3 image upload -> Algolia index sync
+
+@note|context:performance|text:Lighthouse score 95+ on catalog pages; checkout flow is client-side SPA after initial SSR to avoid navigation latency
+@note|context:cost|text:Vercel Pro ($20/mo) + PlanetScale Scaler ($29/mo) + Upstash Pay-as-you-go; total ~$80/mo at 10K orders/mo

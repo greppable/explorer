@@ -1,0 +1,25 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-04-26 source:api-agent
+# Project Atlas — Atlas Finance API v2.3 (build close-out)
+
+@D atlas-finance-api|Atlas finance API at end of build|2.3.0|https://api.acme.internal/finance/v2
+
+@AUTH bearer|JWT bearer issued by Acme SSO|Authorization
+@AUTH service_token|mTLS service-to-service token|x-service-token
+
+@S CutoverStatus|Live cutover status reporting
+ phase|string|required||SHADOW_WRITE|READ_CUTOVER|FULL_CUTOVER
+ startedAt|string|required|date-time|Phase start
+ reconciliationMatch|number|required||Pct match between legacy and Atlas
+ healthy|boolean|required||Whether all dimensions are within tolerance
+
+@S WaiveRequest|Request body for the recon gate waive endpoint
+ reason|string|required||Free-text justification (audited)
+ approver|string|required||Approver identity
+ evidenceUrl|string|||Optional link to supporting evidence
+
+@EP GET /cutover/status|Current cutover phase and health|getCutoverStatus
+@EP POST /cutover/advance|Advances cutover to the next phase (requires approval)|advanceCutover
+@EP POST /cutover/rollback|Rolls cutover back one phase|rollbackCutover
+@EP GET /audit/stream|Server-sent stream of audit events|streamAudit
+
+@R WaiveRequest -> CutoverStatus|references|Waive requests are scoped to a cutover phase

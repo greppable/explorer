@@ -1,0 +1,18 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-04-14 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — migration 0008: account closure tracking (Apr 14)
+
+@D atlas_finance|Adds explicit closure tracking to GeneralLedger accounts
+
+@T GeneralLedger|Account master with closure tracking
+account_id|UUID|N|PK|Primary key
+account_code|VARCHAR(40)|N||Chart of accounts code
+account_name|VARCHAR(200)|N||Display name
+status|VARCHAR(20)|N||Lifecycle status
+parent_id|UUID|Y|FK|Parent account
+currency_iso|CHAR(3)|N||ISO 4217 code
+opened_at|TIMESTAMPTZ|N||When the account was opened
+closed_at|TIMESTAMPTZ|Y||If closed, when (added migration 0008)
+created_at|TIMESTAMPTZ|N||Row creation timestamp
+updated_at|TIMESTAMPTZ|N||Last mutation timestamp
+@E GeneralLedger.status|ACTIVE,INACTIVE,CLOSED,FROZEN

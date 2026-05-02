@@ -1,0 +1,25 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-04-15 source:api-agent
+# Project Atlas — Atlas Finance API v2.2 (mid-build)
+
+@D atlas-finance-api|Atlas finance API mid-build snapshot — adds reconciliation gate drill-down|2.2.0|https://api.acme.internal/finance/v2
+
+@AUTH bearer|JWT bearer issued by Acme SSO|Authorization
+
+@S ReconciliationGate|Per-period gate detail
+ period|string|required||YYYY-MM
+ threshold|number|required||Variance threshold
+ currentVariance|number|required||Current variance value
+ status|string|required||OPEN|CLOSED|GATED|WAIVED
+ lastEvaluatedAt|string|required|date-time|Last evaluation timestamp
+
+@S GateExplanation|Human-readable explanation for a gate decision
+ period|string|required||YYYY-MM
+ verdict|string|required||PASS|FAIL
+ reasons|string|required||Pipe-delimited reason list
+ nextActions|string|||Suggested next steps for finance ops
+
+@EP GET /reconciliation/{period}/gate|Returns current gate state|getReconGate
+@EP GET /reconciliation/{period}/gate/explain|Returns human-readable gate explanation|explainReconGate
+@EP POST /reconciliation/{period}/gate/waive|Manually waives the gate (with audit)|waiveReconGate
+
+@R GateExplanation -> ReconciliationGate|references|GateExplanation refers to a specific gate state

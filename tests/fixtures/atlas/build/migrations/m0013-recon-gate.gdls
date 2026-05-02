@@ -1,0 +1,14 @@
+# @VERSION spec:gdls v:0.1.0 generated:2026-04-22 source:schema-agent
+# @FORMAT COLUMN|SQL_TYPE|NULLABLE|KEY|DESCRIPTION
+# Project Atlas — migration 0013: reconciliation gate state (Apr 22)
+
+@D atlas_finance|Per-period gate state for month-end close
+
+@T ReconciliationGate|Gate state per period — drives the close orchestrator
+period|VARCHAR(7)|N|PK|YYYY-MM
+threshold|NUMERIC(28,8)|N||Variance threshold (default 0.01)
+gate_status|VARCHAR(20)|N||Current gate status
+last_evaluated_at|TIMESTAMPTZ|N||Last evaluation timestamp
+waived_by|VARCHAR(120)|Y||Approver if manually waived
+waived_reason|TEXT|Y||Justification text (audited)
+@E ReconciliationGate.gate_status|OPEN,CLOSED,GATED,WAIVED

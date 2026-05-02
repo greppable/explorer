@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, ExternalLink, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GdlGraphNode } from "@/lib/graph/types";
 
@@ -11,6 +11,7 @@ interface NodeDetailPanelProps {
   connectedNodes: GdlGraphNode[];
   onClose: () => void;
   onNavigateToNode: (nodeId: string) => void;
+  onOpenInExplorer?: (filePath: string, line?: number) => void;
 }
 
 export function NodeDetailPanel({
@@ -18,6 +19,7 @@ export function NodeDetailPanel({
   connectedNodes,
   onClose,
   onNavigateToNode,
+  onOpenInExplorer,
 }: NodeDetailPanelProps) {
   const isPrimary = HIGH_TYPES.has(node.type);
 
@@ -26,7 +28,7 @@ export function NodeDetailPanel({
   );
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-border/20 bg-card/50 animate-in slide-in-from-right-2 duration-200">
+    <div className="flex h-full flex-col border-l border-border/20 bg-card/50 animate-in slide-in-from-right-2 duration-200">
       {/* Header */}
       <div className="flex items-start gap-3 border-b border-border/20 p-4">
         <div className="min-w-0 flex-1">
@@ -63,20 +65,46 @@ export function NodeDetailPanel({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* Source info */}
-        {(node.metadata["sourceFile"] || node.metadata["lineNumber"]) && (
-          <div className="space-y-1.5">
-            <h4 className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/35">
-              Source
-            </h4>
-            <div className="rounded-lg border border-border/20 bg-muted/10 px-3 py-2">
+        {(node.metadata["sourceFile"] || node.metadata["lineNumber"] || node.metadata["path"]) && (
+          (() => {
+            const sourceFile = node.metadata["sourceFile"] || node.metadata["path"];
+            const lineRaw = node.metadata["lineNumber"];
+            const line = lineRaw ? Number.parseInt(lineRaw, 10) : undefined;
+            const canOpen = Boolean(onOpenInExplorer && sourceFile);
+            const Body = (
               <p className="text-[11px] font-mono text-foreground/60 break-all leading-relaxed">
-                {node.metadata["sourceFile"]}
-                {node.metadata["lineNumber"] && (
-                  <span className="text-primary/50">:{node.metadata["lineNumber"]}</span>
+                {sourceFile}
+                {line !== undefined && !Number.isNaN(line) && (
+                  <span className="text-primary/50">:{line}</span>
                 )}
               </p>
-            </div>
-          </div>
+            );
+            return (
+              <div className="space-y-1.5">
+                <h4 className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/35">
+                  Source
+                </h4>
+                {canOpen ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenInExplorer!(
+                        sourceFile!,
+                        line !== undefined && !Number.isNaN(line) ? line : undefined,
+                      )
+                    }
+                    className="group flex w-full items-start justify-between gap-2 rounded-lg border border-border/20 bg-muted/10 px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
+                    title="Open in Explorer"
+                  >
+                    {Body}
+                    <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-primary/70" />
+                  </button>
+                ) : (
+                  <div className="rounded-lg border border-border/20 bg-muted/10 px-3 py-2">{Body}</div>
+                )}
+              </div>
+            );
+          })()
         )}
 
         {/* Fields */}
@@ -106,24 +134,44 @@ export function NodeDetailPanel({
             <div className="space-y-0.5">
               {connectedNodes.map((connected) => {
                 const connIsPrimary = HIGH_TYPES.has(connected.type);
+                const connSource = connected.metadata["sourceFile"] || connected.metadata["path"];
+                const canOpenConn = Boolean(onOpenInExplorer && connSource);
                 return (
-                  <button
+                  <div
                     key={connected.id}
-                    type="button"
-                    onClick={() => onNavigateToNode(connected.id)}
-                    className="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all duration-150 hover:bg-muted/20"
+                    className="group flex w-full items-center gap-1 rounded-lg pl-2 pr-1 py-0.5 transition-colors hover:bg-muted/20"
                   >
-                    <div
-                      className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        connIsPrimary ? "bg-primary/40" : "bg-muted-foreground/30",
-                      )}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/70">
-                      {connected.label}
-                    </span>
-                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/0 transition-all duration-150 group-hover:text-muted-foreground/30 group-hover:translate-x-0.5" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToNode(connected.id)}
+                      className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+                      title="Focus in graph"
+                    >
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          connIsPrimary ? "bg-primary/40" : "bg-muted-foreground/30",
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/70">
+                        {connected.label}
+                      </span>
+                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/0 transition-all duration-150 group-hover:text-muted-foreground/30 group-hover:translate-x-0.5" />
+                    </button>
+                    {canOpenConn && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenInExplorer!(connSource!);
+                        }}
+                        className="shrink-0 rounded p-1 text-muted-foreground/25 transition-colors hover:bg-primary/10 hover:text-primary/70"
+                        title={`Open ${connSource} in Explorer`}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>

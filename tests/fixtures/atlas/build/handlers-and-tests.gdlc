@@ -1,0 +1,34 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-04-25 source:code-agent
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — handler & test layer added in late build (Weeks 9-11)
+
+@D atlas/internal/api/handlers|HTTP handlers and middleware
+
+@F atlas/internal/api/handlers/journal_post.go|go|HandleJournalPost|atlas/internal/ledger/poster,atlas/internal/api/middleware|POST /journal handler with validation envelope
+@F atlas/internal/api/handlers/journal_reverse.go|go|HandleJournalReverse|atlas/internal/ledger/reverser|POST /journal/{id}/reverse handler
+@F atlas/internal/api/handlers/journal_audit.go|go|HandleJournalAudit|atlas/internal/audit|GET /journal/{id}/audit handler
+@F atlas/internal/api/handlers/account_crud.go|go|HandleAccountCrud|atlas/internal/ledger/account|/accounts CRUD handlers
+@F atlas/internal/api/handlers/recon.go|go|HandleReconRun,HandleReconStatus|atlas/internal/recon|/reconciliation/{period} handlers
+@F atlas/internal/api/handlers/close.go|go|HandleCloseRun,HandleCloseGate|atlas/internal/close|/close/{period} handlers
+@F atlas/internal/api/handlers/audit_stream.go|go|HandleAuditStream|atlas/internal/audit|GET /audit/stream SSE handler
+
+@D atlas/internal/api/middleware|HTTP middleware
+
+@F atlas/internal/api/middleware/auth.go|go|AuthMiddleware|github.com/golang-jwt/jwt|JWT auth middleware (Acme SSO)
+@F atlas/internal/api/middleware/idempotency.go|go|IdempotencyMiddleware|atlas/internal/posting/idempotency|Per-request idempotency-key middleware
+@F atlas/internal/api/middleware/audit_actor.go|go|AuditActorMiddleware|context|Stamps actor onto request context for downstream audit emission
+@F atlas/internal/api/middleware/rate_limit.go|go|RateLimitMiddleware|github.com/redis/go-redis|Token-bucket rate limiter
+
+@D atlas/internal/test|Cross-service integration test harness
+
+@F atlas/internal/test/harness.go|go|Harness,NewHarness|atlas/internal/ledger,atlas/internal/posting|Spins up an in-process Atlas stack for integration tests
+@F atlas/internal/test/scenarios/posting.go|go|TestPostingScenarios|atlas/internal/test/harness|End-to-end posting scenarios
+@F atlas/internal/test/scenarios/reversal.go|go|TestReversalScenarios|atlas/internal/test/harness|Reversal flow scenarios with audit assertions
+@F atlas/internal/test/scenarios/close.go|go|TestCloseScenarios|atlas/internal/test/harness|Synthetic month-end close scenarios
+@F atlas/internal/test/scenarios/cutover.go|go|TestShadowWriteScenarios|atlas/internal/test/harness|Shadow-write parity scenarios for cutover validation
+
+@D atlas/internal/observability|Logging, metrics, tracing
+
+@F atlas/internal/observability/logger.go|go|Logger,FromContext|go.uber.org/zap|Structured logger
+@F atlas/internal/observability/metrics.go|go|Metrics,Register|github.com/prometheus/client_golang|Prometheus metrics registration
+@F atlas/internal/observability/tracing.go|go|Tracing|go.opentelemetry.io/otel|OpenTelemetry tracing setup

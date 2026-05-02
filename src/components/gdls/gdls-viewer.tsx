@@ -147,7 +147,7 @@ export function GdlsViewer({ file, onEntitySelect }: GdlsViewerProps) {
         ) : (
           <div className="flex h-full">
             {/* Schema tree (left) */}
-            <div className="w-44 border-r border-border/50 flex-shrink-0">
+            <div className="w-52 min-w-[11rem] max-w-[16rem] border-r border-border/50 flex-shrink-0 resize-x overflow-auto">
               <SchemaTree
                 domains={schema.domains}
                 tables={schema.tables}

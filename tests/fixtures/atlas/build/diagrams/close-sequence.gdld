@@ -1,0 +1,21 @@
+# @VERSION spec:gdld v:0.1.0 generated:2026-04-12 source:arch-agent
+# Project Atlas — month-end close orchestration sequence
+
+@diagram|id:atlas-close-seq|type:sequence|purpose:Month-end close orchestration including FX revaluation and reconciliation gate|created:2026-04-12T14:00:00Z
+
+@participant|id:Operator|label:Finance Operator|kind:actor
+@participant|id:CloseSvc|label:MonthEndCloseService|kind:service
+@participant|id:LedgerSvc|label:LedgerService|kind:service
+@participant|id:FxRevaluator|label:FxRevaluator|kind:service
+@participant|id:ReconSvc|label:ReconciliationService|kind:service
+@participant|id:Gate|label:ReconciliationGate|kind:component
+@participant|id:AuditSvc|label:AuditService|kind:service
+
+@step|from:Operator|to:CloseSvc|label:POST /close/{period}|order:1
+@step|from:CloseSvc|to:FxRevaluator|label:run FX revaluation|order:2
+@step|from:FxRevaluator|to:LedgerSvc|label:post revaluation entries|order:3
+@step|from:CloseSvc|to:ReconSvc|label:run reconciliation|order:4
+@step|from:ReconSvc|to:Gate|label:evaluate against threshold|order:5
+@step|from:Gate|to:CloseSvc|label:gate verdict (PASS/FAIL)|order:6
+@step|from:CloseSvc|to:AuditSvc|label:emit close decision (CLOSE/GATE)|order:7
+@step|from:CloseSvc|to:Operator|label:200 close result + gate state|order:8

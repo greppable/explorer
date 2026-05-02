@@ -29,11 +29,13 @@ interface FileTreeProps {
   selectedFile: FileEntry | null;
   compact?: boolean;
   onProjectName?: (name: string) => void;
+  /** Show parent-folder prefix on each row to disambiguate same-name files. */
+  showPaths?: boolean;
 }
 
 const FORMAT_ORDER: GdlFormat[] = ["gdld", "gdls", "gdla", "gdlc", "gdl", "gdlm", "gdlu"];
 
-export function FileTreeSidebar({ onFileSelect, selectedFile, compact = false, onProjectName }: FileTreeProps) {
+export function FileTreeSidebar({ onFileSelect, selectedFile, compact = false, onProjectName, showPaths = false }: FileTreeProps) {
   const [tree, setTree] = useState<FileTree | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,6 +107,14 @@ export function FileTreeSidebar({ onFileSelect, selectedFile, compact = false, o
               <div className="space-y-0.5">
                 {files.map((file) => {
                   const isSelected = selectedFile?.path === file.path;
+                  // Parent dir is opt-in via the toggle in the sidebar header.
+                  // Clean filenames by default; hover tooltip (title=file.path)
+                  // still surfaces the full path for one-off disambiguation.
+                  const lastSlash = file.path.lastIndexOf("/");
+                  const parentSlash = lastSlash > 0 ? file.path.lastIndexOf("/", lastSlash - 1) : -1;
+                  const parentDir = lastSlash > 0
+                    ? file.path.slice(parentSlash + 1, lastSlash)
+                    : null;
                   return (
                     <button
                       key={file.path}
@@ -119,6 +129,9 @@ export function FileTreeSidebar({ onFileSelect, selectedFile, compact = false, o
                       <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${
                         FORMAT_COLORS[format]
                       }`} />
+                      {showPaths && parentDir && (
+                        <span className="text-muted-foreground/45">{parentDir}/</span>
+                      )}
                       {file.name}
                       <span className="text-muted-foreground/50">.{format}</span>
                       {file.enrichmentPath && <span className="text-primary/40 ml-1 text-[10px]">+enriched</span>}

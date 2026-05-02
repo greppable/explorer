@@ -1,0 +1,23 @@
+# @VERSION spec:gdlm v:0.1.0 generated:2026-05-01 source:agent
+# Project Atlas — Testing phase memories (Week 11-12 onward)
+
+@anchor|concept:test-coverage|scope:test,coverage,uat,regression,edge-case
+
+@memory|id:M-ATL-Q001|agent:qa-agent|type:observation|subject:Atlas|detail:Test agent onboarded; received build-stream handover packs and started orientation|tags:onboarding|anchor:test-coverage|confidence:high|ts:2026-04-27T09:00:00Z
+@memory|id:M-ATL-Q002|agent:qa-agent|type:decision|subject:Atlas|detail:Test plan structured into four streams: functional, integration, performance, compliance|tags:planning,testing|anchor:test-coverage|confidence:high|ts:2026-04-27T13:00:00Z
+
+@memory|id:M-ATL-Q010|agent:qa-agent|type:observation|subject:Poster|detail:First UAT scenario passed: PaymentService event posts journal entry within 200ms|tags:uat,milestone|anchor:posting-service|confidence:high|ts:2026-04-28T11:00:00Z
+@memory|id:M-ATL-Q011|agent:qa-agent|type:observation|subject:Reverser|detail:UAT for reversals: original entry, reversal entry, and audit trail all linked correctly|tags:uat,audit|anchor:ledger-service|confidence:high|ts:2026-04-28T14:00:00Z
+@memory|id:M-ATL-Q012|agent:qa-agent|type:error|subject:Validator|detail:Edge case found: zero-amount entries are accepted; finance team confirms these should be rejected|tags:bug,validation|anchor:posting-service|confidence:high|ts:2026-04-28T16:00:00Z
+@memory|id:M-ATL-Q013|agent:build-agent-1|type:decision|subject:Validator|detail:Validator now rejects zero-amount entries with VALIDATION_ZERO_AMOUNT error code|tags:fix|anchor:posting-service|relates:caused_by~M-ATL-Q012|confidence:high|ts:2026-04-29T10:00:00Z
+
+@memory|id:M-ATL-Q020|agent:qa-agent|type:observation|subject:CloseSvc|detail:Synthetic month-end close UAT: all gate explanations rendered; UX feedback captured|tags:uat,close|anchor:reconciliation|confidence:high|ts:2026-04-29T13:00:00Z
+@memory|id:M-ATL-Q021|agent:qa-agent|type:error|subject:Gate|detail:Gate threshold edge case: when variance == threshold exactly, gate marked as PASS but spec says STRICT-LESS-THAN|tags:bug,gate|anchor:reconciliation|confidence:high|ts:2026-04-29T15:00:00Z
+@memory|id:M-ATL-Q022|agent:build-agent-2|type:decision|subject:Gate|detail:Gate comparison switched to strict less-than per spec; threshold semantics documented|tags:fix|anchor:reconciliation|relates:caused_by~M-ATL-Q021|confidence:high|ts:2026-04-30T11:00:00Z
+
+@memory|id:M-ATL-Q030|agent:qa-agent|type:observation|subject:AuditSvc|detail:Compliance scenario test: simulated SOX audit query returns full lineage for any journal entry within 50ms|tags:compliance,uat|anchor:audit-controls|confidence:high|ts:2026-04-30T13:00:00Z
+@memory|id:M-ATL-Q031|agent:qa-agent|type:observation|subject:SnowflakeDW|detail:Looker dashboard parity test: 12 of 14 dashboards match legacy 1:1; 2 require LookML adjustment|tags:looker,parity|anchor:snowflake-migration|relates:supports~M-ATL-T051|confidence:high|ts:2026-04-30T15:00:00Z
+
+@memory|id:M-ATL-Q040|agent:qa-agent|type:observation|subject:Atlas|detail:End of Week 11 status: 38 test cases executed, 35 pass, 2 fixed, 1 awaiting clarification from finance team|tags:status,weekly|anchor:test-coverage|confidence:high|ts:2026-05-01T10:00:00Z
+@memory|id:M-ATL-Q041|agent:qa-agent|type:observation|subject:Atlas|detail:Performance test under 2x peak load: posting throughput sustained, no errors; latency p99 = 620ms|tags:performance,uat|anchor:posting-service|confidence:high|ts:2026-05-01T13:00:00Z
+@memory|id:M-ATL-Q042|agent:tech-lead|type:observation|subject:Atlas|detail:Steering committee briefed on testing progress; on-track for testing exit by end of Week 12|tags:steering,status|anchor:stakeholder-voice|confidence:high|ts:2026-05-01T16:00:00Z

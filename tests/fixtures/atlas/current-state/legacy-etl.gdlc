@@ -1,0 +1,19 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-03-08 source:code-agent
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — legacy ETL code archaeology
+
+@D legacy/etl/python|Python portion of the existing ETL pipeline (~40% of codebase)
+
+@F legacy/etl/python/runner.py|py|runNightlyBatch,BatchResult|payment_service,ledger_repo,reconciler|Top-level entry point for the nightly batch
+@F legacy/etl/python/extract.py|py|extractFromPaymentService|payment_service,http_client|Pulls payment events for the date
+@F legacy/etl/python/transform.py|py|transformEntries,JournalEntry|decimal,datetime|Maps PaymentService payloads to JournalEntry shape
+@F legacy/etl/python/load.py|py|loadIntoLedger|ledger_repo,batch_helper|Bulk insert into GeneralLedger
+@F legacy/etl/python/reconcile.py|py|reconcile,ReconciliationResult|ledger_repo,fx_lookup|Computes variance and writes ReconciliationRun
+@F legacy/etl/python/models.py|py|BatchResult,ReconciliationResult,JournalEntry|dataclasses|Shared dataclasses for the python runtime
+
+@D legacy/etl/sql_wrappers|Python wrappers around the legacy PL/SQL ledger package (the package itself is ~60% of legacy LoC)
+
+@F legacy/etl/sql_wrappers/legacy_ledger_pkg.py|py|postEntry,reverseEntry,runFxReval,runMonthEndClose|cx_oracle|Python wrapper invoking the monolithic 14-year-old PL/SQL package
+@F legacy/etl/sql_wrappers/fx_eval.py|py|runFxReval|legacy_ledger_pkg|FX revaluation routine called nightly and during month-end close
+@F legacy/etl/sql_wrappers/close_proc.py|py|runMonthEndClose,CloseResult|legacy_ledger_pkg,fx_eval|Month-end close orchestration
+@F legacy/etl/sql_wrappers/audit_triggers.py|py|gl_audit_trg,je_audit_trg|legacy_ledger_pkg|Audit triggers (incomplete — actor often null)

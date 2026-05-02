@@ -1,0 +1,54 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-04-12 source:code-agent
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — new platform code structure (Go) as of mid-build
+
+@D atlas/cmd|Service entry points
+
+@F atlas/cmd/ledger/main.go|go|main|atlas/internal/ledger,atlas/internal/api|LedgerService binary
+@F atlas/cmd/posting/main.go|go|main|atlas/internal/posting,atlas/internal/kafka|PostingService binary
+@F atlas/cmd/recon/main.go|go|main|atlas/internal/recon|ReconciliationService binary
+@F atlas/cmd/close/main.go|go|main|atlas/internal/close|MonthEndCloseService binary
+@F atlas/cmd/audit/main.go|go|main|atlas/internal/audit,atlas/internal/kafka|AuditService binary
+
+@D atlas/internal/ledger|Core ledger domain — posting and account management
+
+@F atlas/internal/ledger/account.go|go|Account,AccountRepo|github.com/google/uuid|GeneralLedger account model and repository contract
+@F atlas/internal/ledger/journal.go|go|JournalEntry,JournalRepo|github.com/google/uuid,github.com/shopspring/decimal|JournalEntry model and repository contract
+@F atlas/internal/ledger/poster.go|go|Poster,PostingError|atlas/internal/ledger/account,atlas/internal/ledger/journal|Posts validated journal entries against the ledger
+@F atlas/internal/ledger/reverser.go|go|Reverser|atlas/internal/ledger/poster|Posts compensating reversal entries
+@F atlas/internal/ledger/fx.go|go|FxRevaluator|atlas/internal/ledger/journal,atlas/internal/fx|FX revaluation engine — replaces legacy nightly job
+@F atlas/internal/ledger/saga.go|go|PostingSaga|atlas/internal/ledger/poster,atlas/internal/audit|Saga orchestrator for cross-service posting
+
+@D atlas/internal/posting|Event consumption and validation
+
+@F atlas/internal/posting/consumer.go|go|Consumer|atlas/internal/kafka|Consumes payment and CDC events
+@F atlas/internal/posting/validator.go|go|Validator,ValidationError|atlas/internal/ledger/journal|Validates events against business rules
+@F atlas/internal/posting/idempotency.go|go|IdempotencyStore|github.com/redis/go-redis|Per-event idempotency keys
+
+@D atlas/internal/recon|Reconciliation engine
+
+@F atlas/internal/recon/runner.go|go|Runner,RunResult|atlas/internal/ledger/journal|Period reconciliation runner
+@F atlas/internal/recon/variance.go|go|VarianceCalc|github.com/shopspring/decimal|Variance computation
+@F atlas/internal/recon/gate.go|go|Gate|atlas/internal/recon/runner|Gates month-end close on reconciliation success
+
+@D atlas/internal/close|Month-end close orchestration
+
+@F atlas/internal/close/orchestrator.go|go|Orchestrator|atlas/internal/recon,atlas/internal/ledger/fx|Month-end close orchestrator
+@F atlas/internal/close/steps.go|go|CloseStep,Steps|atlas/internal/close/orchestrator|Composable close steps with retry semantics
+
+@D atlas/internal/audit|Audit pipeline
+
+@F atlas/internal/audit/emitter.go|go|Emitter|atlas/internal/kafka|Emits audit events to Kafka
+@F atlas/internal/audit/mirror.go|go|Mirror|atlas/internal/audit/emitter|Mirrors Kafka audit events to Postgres
+
+@D atlas/internal/api|HTTP / gRPC API layer
+
+@F atlas/internal/api/router.go|go|Router|net/http,github.com/go-chi/chi|HTTP router for v2 API
+@F atlas/internal/api/journal_handler.go|go|JournalHandler|atlas/internal/ledger/poster|POST /journal handler
+@F atlas/internal/api/account_handler.go|go|AccountHandler|atlas/internal/ledger/account|/accounts handlers
+@F atlas/internal/api/audit_handler.go|go|AuditHandler|atlas/internal/audit|GET /journal/{id}/audit handler
+
+@D atlas/internal/kafka|Kafka helpers
+
+@F atlas/internal/kafka/producer.go|go|Producer|github.com/segmentio/kafka-go|Type-safe Avro producer
+@F atlas/internal/kafka/consumer.go|go|Consumer|github.com/segmentio/kafka-go|Type-safe Avro consumer

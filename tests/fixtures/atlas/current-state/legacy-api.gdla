@@ -1,0 +1,39 @@
+# @VERSION spec:gdla v:0.1.0 generated:2026-03-10 source:api-agent
+# Project Atlas — legacy internal finance API surface (as-is)
+
+@D legacy-finance-api|Acme legacy internal finance API|1.4.7|https://api.acme.internal/finance/v1
+
+@AUTH internal_jwt|Internal JWT issued by Acme SSO|Authorization
+
+@S JournalEntry|Legacy journal entry payload
+ jeId|integer|required|int64|Primary key
+ jeDate|string|required|date|Posting date
+ accountRef|integer|required|int64|GeneralLedger account ID
+ amount|number|required||Posted amount
+ source|string|required||MANUAL|AUTO|REVERSAL|IMPORT|FX_REVAL
+ createdBy|string|required||System or user that posted
+ batchId|string|||Batch identifier when applicable
+
+@S GeneralLedger|Legacy account payload
+ accountId|integer|required|int64|Primary key
+ code|string|required||Chart of accounts code
+ name|string|||Display name
+ status|string|required||ACTIVE|INACTIVE|SUSPENDED|ARCHIVED
+ currency|string|required||ISO currency
+
+@S ReconciliationRun|Reconciliation summary
+ runId|integer|required|int64|Primary key
+ period|string|required||YYYY-MM
+ variance|number|||Total unreconciled variance
+ status|string|required||SUCCESS|VARIANCE|FAILED|IN_PROGRESS
+
+@EP GET /accounts|Lists active GeneralLedger accounts|listAccounts
+@EP GET /accounts/{id}|Returns a single account by ID|getAccount
+@EP GET /journal|Lists journal entries with filters|listJournalEntries
+@EP POST /journal|Posts a new manual journal entry|createJournalEntry
+@EP POST /journal/{id}/reverse|Reverses an existing entry|reverseJournalEntry
+@EP GET /reconciliation/{period}|Returns reconciliation status for a period|getReconciliation
+@EP POST /close/{period}|Triggers month-end close (long-running)|runMonthEndClose
+
+@R JournalEntry -> GeneralLedger|references|JournalEntry posts against a GeneralLedger account
+@R ReconciliationRun -> JournalEntry|aggregates|Reconciliation summarises a window of journal entries

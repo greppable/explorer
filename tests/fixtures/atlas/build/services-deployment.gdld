@@ -1,0 +1,38 @@
+# @VERSION spec:gdld v:0.1.0 generated:2026-04-22 source:arch-agent
+# Project Atlas — services deployment topology emerged during build
+
+@diagram|id:atlas-deployment|type:deployment|purpose:Per-environment deployment topology of the Atlas service mesh as of mid-build|direction:TB|created:2026-04-22T11:00:00Z
+
+@deploy-env|id:dev|name:Development
+@deploy-env|id:staging|name:Staging
+@deploy-env|id:prod|name:Production
+
+@deploy-node|id:dev-cluster|env:dev|kind:k8s-namespace
+@deploy-node|id:staging-cluster|env:staging|kind:k8s-namespace
+@deploy-node|id:prod-cluster|env:prod|kind:k8s-namespace
+
+@deploy-instance|component:LedgerSvc|node:dev-cluster|replicas:2
+@deploy-instance|component:PostingSvc|node:dev-cluster|replicas:3
+@deploy-instance|component:ReconSvc|node:dev-cluster|replicas:1
+@deploy-instance|component:CloseSvc|node:dev-cluster|replicas:1
+@deploy-instance|component:AuditSvc|node:dev-cluster|replicas:2
+
+@deploy-instance|component:LedgerSvc|node:staging-cluster|replicas:3
+@deploy-instance|component:PostingSvc|node:staging-cluster|replicas:6
+@deploy-instance|component:ReconSvc|node:staging-cluster|replicas:2
+@deploy-instance|component:CloseSvc|node:staging-cluster|replicas:1
+@deploy-instance|component:AuditSvc|node:staging-cluster|replicas:3
+
+@deploy-instance|component:LedgerSvc|node:prod-cluster|replicas:6
+@deploy-instance|component:PostingSvc|node:prod-cluster|replicas:12
+@deploy-instance|component:ReconSvc|node:prod-cluster|replicas:3
+@deploy-instance|component:CloseSvc|node:prod-cluster|replicas:2
+@deploy-instance|component:AuditSvc|node:prod-cluster|replicas:6
+
+@infra-node|id:rds-prod|kind:postgres|env:prod
+@infra-node|id:rds-staging|kind:postgres|env:staging
+@infra-node|id:msk-prod|kind:kafka|env:prod
+@infra-node|id:msk-staging|kind:kafka|env:staging
+@infra-node|id:redis-prod|kind:redis|env:prod
+@infra-node|id:redis-staging|kind:redis|env:staging
+@infra-node|id:snowflake|kind:warehouse|env:prod

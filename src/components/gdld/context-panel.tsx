@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ContextData, DeployEnv, DeployNode, DeployInstance, InfraNode } from "@/lib/parsers/gdld-parser";
 
@@ -37,7 +38,7 @@ export function ContextPanel({ context, deployEnvs, deployNodes, deployInstances
     <ScrollArea className="h-full">
       <div className="p-3 space-y-3 text-xs">
         {context.gotchas.length > 0 && (
-          <Section title="Gotchas" className="text-destructive">
+          <Section title="Gotchas" className="text-destructive" defaultOpen={false}>
             {context.gotchas.map((g, i) => (
               <div key={`gotcha-${g.issue}-${i}`} className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
@@ -131,7 +132,7 @@ export function ContextPanel({ context, deployEnvs, deployNodes, deployInstances
         )}
 
         {context.recovery.length > 0 && (
-          <Section title="Recovery">
+          <Section title="Recovery" defaultOpen={false}>
             {context.recovery.map((r, i) => (
               <div key={`recovery-${r.issue}-${i}`} className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
@@ -244,17 +245,24 @@ function Section({
   title,
   className,
   children,
+  defaultOpen = true,
 }: {
   title: string;
   className?: string;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div>
-      <h3 className={`text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${className || "text-muted-foreground"}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider mb-1.5 hover:opacity-80 transition-opacity ${className || "text-muted-foreground"}`}
+      >
+        <span className={`text-[8px] transition-transform ${open ? "rotate-90" : ""}`}>&#9654;</span>
         {title}
-      </h3>
-      <div className="space-y-1.5">{children}</div>
+      </button>
+      {open && <div className="space-y-1.5">{children}</div>}
     </div>
   );
 }

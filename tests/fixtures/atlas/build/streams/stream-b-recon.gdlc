@@ -1,0 +1,14 @@
+# @VERSION spec:gdlc v:0.2.0 generated:2026-04-01 source:build-agent-2
+# @FORMAT PATH|LANG|EXPORTS|IMPORTS|DESCRIPTION
+# Project Atlas — Stream B (ReconSvc + CloseSvc) initial structure
+
+@D atlas/internal/recon|Stream B — reconciliation engine (build-agent-2)
+
+@F atlas/internal/recon/runner.go|go|Runner,RunResult|atlas/internal/ledger/journal|Period reconciliation runner
+@F atlas/internal/recon/variance.go|go|VarianceCalc|github.com/shopspring/decimal|Variance computation
+@F atlas/internal/recon/gate.go|go|Gate|atlas/internal/recon/runner|Gates month-end close on reconciliation success
+
+@D atlas/internal/close|Stream B — month-end close
+
+@F atlas/internal/close/orchestrator.go|go|Orchestrator|atlas/internal/recon,atlas/internal/ledger/fx|Month-end close orchestrator
+@F atlas/internal/close/steps.go|go|CloseStep,Steps|atlas/internal/close/orchestrator|Composable close steps

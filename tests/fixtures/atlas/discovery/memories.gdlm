@@ -1,0 +1,51 @@
+# @VERSION spec:gdlm v:0.1.0 generated:2026-02-28 source:agent
+# Project Atlas — Discovery phase agent memories
+
+@anchor|concept:ledger-modernization|scope:ledger,journal,reconciliation,month-end,close
+@anchor|concept:snowflake-migration|scope:snowflake,warehouse,dw,etl,landing
+@anchor|concept:audit-controls|scope:sox,ifrs,audit,controls,compliance
+@anchor|concept:legacy-as-is|scope:legacy,as-is,inventory,debt
+@anchor|concept:stakeholder-voice|scope:interview,pain,stakeholder,priority
+
+@memory|id:M-ATL-D001|agent:ba-agent|type:observation|subject:Atlas|detail:Project Atlas formally kicked off; CFO is the executive sponsor and decision-maker for scope changes|tags:kickoff,governance|anchor:stakeholder-voice|confidence:high|ts:2026-02-09T15:30:00Z
+@memory|id:M-ATL-D002|agent:ba-agent|type:fact|subject:Stewart-CFO|detail:CFO Stewart owns the success criteria; primary KPI is reduction of month-end close from 9 days to 3|tags:governance,kpi|anchor:stakeholder-voice|confidence:high|ts:2026-02-09T15:45:00Z
+@memory|id:M-ATL-D003|agent:ba-agent|type:fact|subject:Priya-CTO|detail:CTO Priya is the technical authority; flagged audit trail and SOX as non-negotiable constraints|tags:constraints,sox|anchor:audit-controls|confidence:high|ts:2026-02-09T16:00:00Z
+@memory|id:M-ATL-D004|agent:ba-agent|type:decision|subject:Atlas|detail:Agreed on weekly steering committee Wednesdays 1pm with both Stewart and Priya present|tags:governance,cadence|anchor:stakeholder-voice|confidence:high|ts:2026-02-09T17:00:00Z
+
+@memory|id:M-ATL-D010|agent:ba-agent|type:observation|subject:JournalEntry|detail:Finance team reports that 23% of journal entries currently require manual correction during reconciliation|tags:reconciliation,quality|anchor:ledger-modernization|confidence:high|ts:2026-02-10T11:30:00Z
+@memory|id:M-ATL-D011|agent:ba-agent|type:observation|subject:GeneralLedger|detail:Month-end close takes 9 working days, primarily blocked by intercompany eliminations|tags:month-end,bottleneck|anchor:ledger-modernization|confidence:high|ts:2026-02-10T11:45:00Z
+@memory|id:M-ATL-D012|agent:ba-agent|type:observation|subject:GeneralLedger|detail:Finance ops manually re-keys ~400 entries per quarter from spreadsheet uploads — major automation candidate|tags:manual,automation|anchor:ledger-modernization|confidence:high|ts:2026-02-10T12:00:00Z
+@memory|id:M-ATL-D013|agent:ba-agent|type:fact|subject:JournalEntry|detail:Existing journal entries lack reliable timestamps for upstream source events; only persisted post-batch|tags:data-quality|anchor:ledger-modernization|confidence:medium|ts:2026-02-10T12:15:00Z
+
+@memory|id:M-ATL-D020|agent:ba-agent|type:observation|subject:LegacyETL|detail:Operations team carries pager rotation specifically for ETL failures; 2-3 pages per weekend on average|tags:ops,reliability|anchor:legacy-as-is|confidence:high|ts:2026-02-10T14:30:00Z
+@memory|id:M-ATL-D021|agent:ba-agent|type:observation|subject:PaymentService|detail:Payment service feeds the ledger via overnight batch; latency complaints from Treasury|tags:payments,latency|anchor:ledger-modernization|confidence:high|ts:2026-02-10T14:45:00Z
+@memory|id:M-ATL-D022|agent:ba-agent|type:error|subject:LegacyETL|detail:Ops described 4 production incidents in last 90 days where ETL silently dropped batches with no alert|tags:incident,ops|anchor:legacy-as-is|relates:supports~M-ATL-D020|confidence:high|ts:2026-02-10T15:00:00Z
+
+@memory|id:M-ATL-D030|agent:ba-agent|type:observation|subject:LegacyLedger|detail:Engineering describes legacy ledger as a 14-year-old PL/SQL package with no test coverage|tags:tech-debt,legacy|anchor:legacy-as-is|confidence:high|ts:2026-02-11T11:00:00Z
+@memory|id:M-ATL-D031|agent:ba-agent|type:observation|subject:LegacyLedger|detail:Source code for ledger procedures lives in a private GitLab repo with last commit 11 months ago|tags:tech-debt|anchor:legacy-as-is|confidence:high|ts:2026-02-11T11:15:00Z
+@memory|id:M-ATL-D032|agent:ba-agent|type:fact|subject:GeneralLedger|detail:Postgres 11 currently hosts the operational ledger; planned EOL is 2026-11; forces schema modernization either way|tags:eol,constraint|anchor:ledger-modernization|confidence:high|ts:2026-02-11T11:30:00Z
+@memory|id:M-ATL-D033|agent:ba-agent|type:decision|subject:SnowflakeDW|detail:Snowflake confirmed as analytics target; Acme already has enterprise contract — no procurement blocker|tags:snowflake,scope|anchor:snowflake-migration|confidence:high|ts:2026-02-11T11:45:00Z
+
+@memory|id:M-ATL-D040|agent:ba-agent|type:observation|subject:Analytics|detail:Data team needs <2hr latency from event to dashboard for finance metrics — current is 24hr|tags:sla,latency|anchor:snowflake-migration|confidence:high|ts:2026-02-12T11:30:00Z
+@memory|id:M-ATL-D041|agent:ba-agent|type:observation|subject:Dashboards|detail:14 critical Looker dashboards depend on the GeneralLedger fact tables — must be preserved or replaced 1:1|tags:looker,migration|anchor:snowflake-migration|confidence:high|ts:2026-02-12T11:45:00Z
+
+@memory|id:M-ATL-D050|agent:ba-agent|type:observation|subject:GeneralLedger|detail:SOX 404 controls require immutable audit trail with named-actor attribution on every entry mutation|tags:sox,audit|anchor:audit-controls|confidence:high|ts:2026-02-12T13:00:00Z
+@memory|id:M-ATL-D051|agent:ba-agent|type:observation|subject:JournalEntry|detail:IFRS 9 reclassification rules require versioned journal entries with reversal traceability|tags:ifrs,audit|anchor:audit-controls|confidence:high|ts:2026-02-12T13:15:00Z
+@memory|id:M-ATL-D052|agent:ba-agent|type:decision|subject:GeneralLedger|detail:All ledger mutations in the new platform must emit immutable audit events to Kafka — non-negotiable|tags:audit,decision|anchor:audit-controls|confidence:high|ts:2026-02-12T14:00:00Z
+
+@memory|id:M-ATL-D060|agent:ba-agent|type:fact|subject:Acme|detail:Acme operates in 7 countries; multi-currency and FX revaluation are required from day one|tags:scope,multi-currency|anchor:ledger-modernization|confidence:high|ts:2026-02-13T10:00:00Z
+@memory|id:M-ATL-D061|agent:ba-agent|type:observation|subject:GeneralLedger|detail:Existing FX revaluation runs as a separate nightly job; finance prefers it inline with the close|tags:fx,month-end|anchor:ledger-modernization|confidence:medium|ts:2026-02-13T10:15:00Z
+
+@memory|id:M-ATL-D070|agent:ba-agent|type:preference|subject:Atlas|detail:Stewart prefers progressive disclosure of risks rather than surprise escalations — established channel via WhatsApp|tags:comms,governance|anchor:stakeholder-voice|confidence:medium|ts:2026-02-16T09:00:00Z
+@memory|id:M-ATL-D071|agent:ba-agent|type:preference|subject:Priya-CTO|detail:Priya wants weekly architecture brief in markdown — not slide decks|tags:comms,format|anchor:stakeholder-voice|confidence:medium|ts:2026-02-16T09:15:00Z
+
+@memory|id:M-ATL-D080|agent:arch-agent|type:observation|subject:LegacyLedger|detail:Initial architectural read suggests ledger logic is intermingled with reporting queries — separation of concerns is poor|tags:tech-debt,arch|anchor:legacy-as-is|confidence:high|ts:2026-02-17T14:00:00Z
+@memory|id:M-ATL-D081|agent:arch-agent|type:observation|subject:LegacyETL|detail:ETL is 60% Informatica, 40% custom Python — heterogeneous codebase, training risk|tags:etl,tech-debt|anchor:legacy-as-is|confidence:high|ts:2026-02-17T14:30:00Z
+@memory|id:M-ATL-D082|agent:arch-agent|type:decision|subject:Atlas|detail:Strangler-fig migration preferred over big-bang; agreed with Priya|tags:strategy,migration|anchor:ledger-modernization|confidence:high|ts:2026-02-18T11:00:00Z
+
+@memory|id:M-ATL-D090|agent:ba-agent|type:observation|subject:Customer|detail:Customer master data lives in Salesforce; CDC available but not currently piped to finance|tags:cdc,customer|anchor:ledger-modernization|confidence:high|ts:2026-02-19T11:00:00Z
+@memory|id:M-ATL-D091|agent:ba-agent|type:fact|subject:PaymentService|detail:Payment service is owned by a separate Acme team; coordination overhead — weekly sync established|tags:teams,coordination|anchor:ledger-modernization|confidence:high|ts:2026-02-19T11:30:00Z
+
+@memory|id:M-ATL-D100|agent:ba-agent|type:decision|subject:Atlas|detail:Discovery formally complete; greenlit to proceed into design — decision logged with Stewart's signoff|tags:gate,discovery-complete|anchor:stakeholder-voice|confidence:high|ts:2026-02-27T16:30:00Z
+@memory|id:M-ATL-D101|agent:arch-agent|type:decision|subject:Atlas|detail:Tech design will target Postgres 16 + Snowflake split, with Kafka audit stream|tags:tech-stack,decision|anchor:ledger-modernization|relates:supports~M-ATL-D082|confidence:high|ts:2026-02-27T17:00:00Z
+@memory|id:M-ATL-D102|agent:ba-agent|type:observation|subject:Atlas|detail:Discovery findings well-received in steering committee; 2 risk items added: third-party dependency on payment provider, and skills gap on Snowflake|tags:risks,governance|anchor:stakeholder-voice|confidence:high|ts:2026-02-27T17:30:00Z

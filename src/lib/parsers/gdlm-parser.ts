@@ -10,6 +10,8 @@ export interface GdlmMemory {
   confidence: string;
   relates: string;
   type: string;
+  /** Anchor concept this memory belongs to (per @memory `anchor:` field). */
+  anchor: string;
   line: number;
   raw: string;
 }
@@ -52,6 +54,7 @@ export function parseGdlm(content: string): GdlmFile {
       const confidence = getField(line, "confidence") || "";
       const relates = getField(line, "relates") || "";
       const type = getField(line, "type") || "";
+      const anchor = getField(line, "anchor") || "";
 
       if (subject) subjectSet.add(subject);
       if (agent) agentSet.add(agent);
@@ -60,7 +63,7 @@ export function parseGdlm(content: string): GdlmFile {
 
       memories.push({
         id, agent, subject, detail, ts, tags,
-        confidence, relates, type, line: i + 1, raw: line,
+        confidence, relates, type, anchor, line: i + 1, raw: line,
       });
     } else if (line.startsWith("@anchor")) {
       const concept = getField(line, "concept") || "";
